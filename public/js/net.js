@@ -38,7 +38,8 @@ async function login(){
 async function relogin(){
   const name = localStorage.getItem('pd_n'), pass = localStorage.getItem('pd_p');
   if(!name || !pass) return false;
-  const r = await post('/api/login', {name, pass, create:1});
+  const r = await post('/api/login', {name, pass, create:1,
+                                      invite: localStorage.getItem('pd_inv') || ''});
   if(r.err || !r.token) return false;
   TOK = r.token; localStorage.setItem('pd_tok', TOK); return true;
 }
@@ -60,10 +61,17 @@ function connect(){
   ES = new EventSource('/api/events?token='+encodeURIComponent(TOK));
   ES.onmessage = e => handle(JSON.parse(e.data));
   ES.onerror = async () => {
-    if(ES.readyState === EventSource.CLOSED){
-      out('pub', '<span class="d">与江湖失去联系，正在重连……</span>');
-      if(await relogin()) setTimeout(connect, 1200); else setTimeout(()=>location.reload(), 2500);
-    }
+    if(ES.readyState !== EventSource.CLOSED) return;
+    out('pub', '<span class="d">与江湖失去联系，正在重连……</span>');
+    if(await relogin()){ setTimeout(connect, 1200); return; }
+    // 重登也不成（多半是服务器重启过、token 作废了）：别再刷新兜圈子，
+    // 直接把人送回登录框。以前这里 location.reload()，会拿着废 token
+    // 一遍遍进空界面，看上去就是"打开是一片空白"。
+    localStorage.removeItem('pd_tok');
+    TOK = '';
+    $('app').style.display = 'none';
+    $('login').style.display = '';
+    $('err').textContent = '登录过期了，重新进一次。';
   };
 }
 
