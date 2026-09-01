@@ -45,69 +45,36 @@ function newPlayer(name, pass){
 }
 const RUNTIME = ['clients','idle','battle','pending','buf'];
 
-let saveTimer = null, saveDirty = false;
-/* 存档：合并频繁调用，写的时候先写临时文件再原子替换，绝不留半截文件 */
-function save(immediate){
-  saveDirty = true;
-  if(immediate){
-    if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
-    return flush();
-  }
-  if(saveTimer) return;
-  saveTimer = setTimeout(()=>{ saveTimer = null; flush(); }, 2000);
-}
-function flush(){
-  if(!saveDirty) return;
-  saveDirty = false;
-  const players = {};
-  for(const [n,p] of world.players){
-    const o = {}; for(const k in p) if(!RUNTIME.includes(k)) o[k]=p[k];
-    players[n] = o;
-  }
-  const blob = JSON.stringify({players, market:world.market, mseq:world.mseq,
-                               board:world.board, bseq:world.bseq, shadows:world.shadows});
-  const tmp = DATA + '.tmp';
-  try{
-    const fd = fs.openSync(tmp, 'w');
-    fs.writeSync(fd, blob);
-    fs.fsyncSync(fd);                                   // 逼它真的落盘，别留在缓存里
-    fs.closeSync(fd);
-    if(fs.existsSync(DATA)) fs.copyFileSync(DATA, DATA + '.bak');   // 上一份好的留作备份
-    fs.renameSync(tmp, DATA);                           // 这一步是原子的：要么旧的要么新的
-  }catch(e){
-    console.error('！存档写失败：', e.message);
-  }
-}
-function load(){
-  for(const file of [DATA, DATA + '.bak']){
-    if(!fs.existsSync(file)) continue;
-    try{
-      const f = JSON.parse(fs.readFileSync(file, 'utf8'));
-      const raw = f.players || f;                       // 兼容早先的格式
-      if(f.market){ world.market = f.market; world.mseq = f.mseq || 0; }
-      if(f.board){ world.board = f.board; world.bseq = f.bseq || 0; }
-      if(f.shadows) world.shadows = f.shadows;
-      for(const n in raw){
-        const p = Object.assign(newPlayer(n,'x'), raw[n]);
-        p.clients = new Set(); p.idle = null; p.battle = null; p.pending = null; p.buf = null;
-        if(!p.bag) p.bag = [];
-        if(!p.mats) p.mats = {jing:0, xuan:0};
-        if(!p.mail) p.mail = [];
-        if(p.quest === undefined) p.quest = null;
-        world.players.set(n, p);
-      }
-      console.log('已读入 ' + world.players.size + ' 名玩家' +
-                  (world.market.length ? '，' + world.market.length + ' 个摊位' : '') +
-                  (file.endsWith('.bak') ? '　※ 主存档坏了，是从备份恢复的' : ''));
-      return;
-    }catch(e){
-      console.error('！' + file + ' 读不了（' + e.message + '）' +
-                    (file === DATA ? '，改用备份……' : ''));
-    }
-  }
-  console.log('全新的江湖，还没有人。');
-}
+const store = require('./store.js');
 
+/* 存档全交给 store：不配 DB_HOST 就写 data.json，配了就写 MySQL */
+function save(immediate){
+  store.markAll();
+  return store.flush(!!immediate);
+}
+async function load(){
+  const info = await store.init(world, RUNTIME, DATA);
+  const data = await store.loadAll();
+  if(!data){ console.log('全新的江湖，还没有人。'); return info; }
+
+  world.market  = data.market  || [];
+  world.board   = data.board   || [];
+  world.shadows = data.shadows || [];
+  world.mseq    = data.mseq || 0;
+  world.bseq    = data.bseq || 0;
+  for(const n in data.players){
+    const p = Object.assign(newPlayer(n, 'x'), data.players[n]);
+    p.clients = new Set(); p.idle = null; p.battle = null; p.pending = null; p.buf = null;
+    if(!p.bag) p.bag = [];
+    if(!p.mats) p.mats = {jing:0, xuan:0};
+    if(!p.mail) p.mail = [];
+    if(p.quest === undefined) p.quest = null;
+    world.players.set(n, p);
+  }
+  console.log('已读入 ' + world.players.size + ' 名玩家' +
+              (world.market.length ? '，' + world.market.length + ' 个摊位' : ''));
+  return info;
+}
 /* ============ 推 送 ============ */
 function push(p, msg){
   const s = 'data: ' + JSON.stringify(msg) + '\n\n';
@@ -224,7 +191,7 @@ function battleView(p){
     }),
   };
 }
-const sync = p => push(p, stateOf(p));
+const sync = p => { store.markPlayer(p.name); push(p, stateOf(p)); };
 const syncRoom = scene => { for(const q of inRoom(scene)) sync(q); };
 
 /* ============ 成 长 ============ */
@@ -638,7 +605,7 @@ setInterval(()=>{
   }
   for(const p of online()) sync(p);
 }, 1000);
-setInterval(save, 30000);
+setInterval(()=>save(), 5*60*1000);   // 兜底，日常靠 sync 的增量标记
 setInterval(()=>{ for(const p of online()) push(p, {t:'ping'}); }, 20000);
 
 
@@ -805,6 +772,7 @@ function dropIt(p, slot){
 
 /* 寄卖摊：装备连同打造等级一起转手，成交抽一成 */
 function stall(p, slot, price){
+  store.markWorld();
   if(!MAP[p.scene].market) return log(p,'<b>此处没有集市。</b>','warn');
   price = Math.max(1, parseInt(price)||0);
   const it = p.bag[slot]; if(!it) return;
@@ -821,6 +789,7 @@ function stall(p, slot, price){
   sync(p);
 }
 function unstall(p, id){
+  store.markWorld();
   const i = world.market.findIndex(m=>m.id===+id && m.seller===p.name);
   if(i < 0) return;
   if(p.bag.length >= F.bagMax) return log(p,'<b class="r">行囊满了，收不回来。</b>');
@@ -831,6 +800,7 @@ function unstall(p, id){
   sync(p);
 }
 function buyStall(p, id){
+  store.markWorld();
   const i = world.market.findIndex(m=>m.id===+id);
   if(i < 0) return log(p,'<span class="d">这件已经被人买走了。</span>');
   const m = world.market[i];
@@ -866,6 +836,7 @@ function readBoard(p){
   log(p, '<span class="d">—— 共 '+world.board.length+' 条，贴一张自己的：底下输入框选「告示」频道。</span>');
 }
 function postBoard(p, text){
+  store.markWorld();
   text = String(text||'').slice(0,80).trim();
   if(!text) return;
   world.board.push({id:++world.bseq, who:p.name, lv:p.lv,
@@ -950,6 +921,7 @@ function questKill(p, mobKey){
 
 /* 擂台守擂：把自己的身手留在台上，人走了也有人替你打 */
 function leaveShadow(p){
+  store.markWorld();
   if(!MAP[p.scene].arena) return;
   world.shadows = world.shadows.filter(s2 => s2.name !== p.name);
   world.shadows.push({
@@ -1300,21 +1272,24 @@ const server = http.createServer(async (req, res)=>{
   });
 });
 
-load();
-function bye(sig){
-  save(true);
+let byeing = false;
+async function bye(sig){
+  if(byeing) return; byeing = true;
+  try{ await store.close(); }catch(e){ console.error('！关服存档失败：', e.message); }
   console.log('\n已存档，江湖再会。（' + sig + '）');
   process.exit(0);
 }
 process.on('SIGINT',  ()=>bye('Ctrl+C'));
 process.on('SIGTERM', ()=>bye('SIGTERM'));
 process.on('SIGHUP',  ()=>bye('终端关闭'));
-process.on('uncaughtException', e => {
+process.on('uncaughtException', async e => {
   console.error('！出了个没接住的岔子：', e);
-  save(true);                                           // 崩之前先把命保住
+  try{ await store.close(); }catch(_){}                  // 崩之前先把命保住
   process.exit(1);
 });
-server.listen(PORT, ()=>{
+
+let bootInfo = null;
+function listen(){ server.listen(PORT, ()=>{
   if(process.env.QUIET){ console.log('ready'); return; }        // 测试时别刷屏
   const nets = require('node:os').networkInterfaces();
   const lan = Object.values(nets).flat()
@@ -1324,6 +1299,11 @@ server.listen(PORT, ()=>{
   console.log('  ╚══════════════════════════════════════════╝');
   console.log('  本机：  http://localhost:' + PORT);
   for(const ip of lan) console.log('  同局域网的朋友： http://' + ip + ':' + PORT);
-  console.log('  存档：  ' + DATA + '（每 30 秒自动写盘）');
+  console.log('  存档：  ' + (bootInfo ? bootInfo.where : DATA) +
+              '（' + (bootInfo && bootInfo.mode === 'mysql' ? 'MySQL' : '本地文件') + '）');
   console.log('  Ctrl+C 存档并关服\n');
-});
+}); }
+
+/* 先把存档读起来再开门，免得有人进来时数据还没就位 */
+load().then(info => { bootInfo = info; listen(); })
+      .catch(e => { console.error('\n！起不来：' + e.message + '\n'); process.exit(1); });

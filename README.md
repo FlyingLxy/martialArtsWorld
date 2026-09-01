@@ -33,13 +33,22 @@
 
 ## 跑起来
 
-要求 Node 18+，**零依赖**，不用 `npm install`。
+要求 Node 18+。**本地玩不用装任何依赖**：
 
 ```bash
 git clone git@github.com:FlyingLxy/martialArtsWorld.git
 cd martialArtsWorld
-node server.js          # 或者双击「开服.command」
+node server.js          # 或者双击「开服.command」，存档写成 data.json
 ```
+
+要连 MySQL（云上部署用）才需要装驱动：
+
+```bash
+npm install             # 只为了 mysql2
+DB_HOST=127.0.0.1 DB_USER=paodian DB_PASS=xxx DB_NAME=paodian node server.js
+```
+
+**不配 `DB_HOST` 就走本地文件，配了就走 MySQL**，代码完全一样。
 
 开起来后：
 
@@ -61,12 +70,38 @@ http://你的机器名.local:8080          ← 主机名，不会变
 
 ### 存档
 
-所有人共用服务端的一个 `data.json`（**已在 .gitignore 里，别提交**），每人的角色按**名号 + 暗号**独立，
-换台机器换个浏览器，用同样的名号暗号登录就接着玩。名号不存在时前端会先问一句「要新建吗」，
-免得老玩家打错一个字以为存档没了。
+所有人共用一份存档，每人的角色按**名号 + 暗号**独立，换台机器换个浏览器，用同样的名号暗号登录就接着玩。
+名号不存在时前端会先问一句「要新建吗」，免得老玩家打错一个字以为存档没了。
 
-写盘是**原子**的：先写 `data.json.tmp` 并 fsync，再 rename 顶替，同时把上一份留成 `data.json.bak`。
-断电或 `kill -9` 都不会写出半截文件；主文件真坏了，下次开服会自动认出来并从 `.bak` 恢复。最坏丢 30 秒进度。
+存档层在 `store.js`，游戏逻辑不关心底下是文件还是数据库：
+
+| | 本地文件（默认） | MySQL（配了 `DB_HOST`） |
+|---|---|---|
+| 存哪 | `data.json`（**已在 .gitignore，别提交**） | `players` / `world` 两张表 |
+| 怎么写 | 原子写：`.tmp` + fsync + rename，另留一份 `.bak` | 事务提交，只写变动的玩家 |
+| 坏了怎么办 | 开服自动从 `.bak` 恢复 | InnoDB 自己保证一致性 |
+| 适合 | 本地、几个人的小服 | 云上长期跑 |
+
+**写入策略**：谁的状态变了就标记谁（挂在 `sync()` 上，所以业务代码不用管），默认 2 秒合并写一次；
+关服、崩溃前会立即落盘。**第一次用 MySQL 启动时，如果发现 `data.json` 会自动整个迁进去**，
+迁完把原文件改名成 `data.json.migrated`。
+
+## 用 Docker 部署
+
+```bash
+cp .env.example .env       # 改掉里面两个密码
+docker compose up -d       # 游戏 + MySQL 一起起来
+docker compose logs -f game
+```
+
+`docker-compose.yml` 里两处是要点，**改之前先看懂**：
+
+- `./mysql-data:/var/lib/mysql`——**少了这行，容器一删数据库数据全没**
+- `depends_on: condition: service_healthy`——等 MySQL 真能连上再起游戏，否则游戏会因连不上直接退出
+
+**用云上的 RDS 而不是自建**：把 `db` 那一整段删掉，`game` 的 `DB_HOST` 改成 RDS 的内网地址即可。
+
+老存档迁移：把 `data.json` 放进 `./game-data-vol/`，第一次启动会自动导进 MySQL。
 
 暗号只存 sha256，但局域网里走的是 HTTP 明文，**别用你在别处用的密码**。
 
@@ -96,9 +131,12 @@ http://你的机器名.local:8080          ← 主机名，不会变
 ```
 game-data.js        数据表 + 数值公式（前后端共用，浏览器走 /data.js 拿）
 server.js           服务端：游戏逻辑 + HTTP + SSE
+store.js            存档层：本地文件 / MySQL 二选一，游戏逻辑不感知
 public/index.html   客户端：一个文件装下全部界面和交互
-solo-单机版.html     早先做的单机版，双击就玩，跟上面三个没有关系
-test.js             主链自测，node test.js
+test.js             主链自测，node test.js [mysql]
+Dockerfile          容器镜像
+docker-compose.yml  游戏 + MySQL + 数据卷
+solo-单机版.html     早先做的单机版，双击就玩，跟上面几个没有关系
 ```
 
 **`game-data.js` 前后端共用**，所以里面**不能出现任何 Node API**（`require`、`fs`、`process` 都不行）。
@@ -249,11 +287,12 @@ forge: 每级 +12% 属性，费用 (原价*0.6+200)*(n+1)，成功率 95%-9%n，
 改完记得跑一遍，**尤其是动了数值或者钱货相关的地方**：
 
 ```bash
-node test.js
+node test.js              # 本地文件模式，43 项
+node test.js mysql        # MySQL 模式，46 项（需要一个能连的 MySQL）
 ```
 
 它会在系统临时目录里另起一个服务器（独立端口 8199、独立存档），**绝不碰你正式的 `data.json`**，
-跑完自己清理。目前 43 项断言，覆盖这条主链：
+跑完自己清理。MySQL 模式默认连 `127.0.0.1:3307`，可用 `DB_HOST` 等环境变量覆盖。覆盖这条主链：
 
 | 组 | 验的是 |
 |---|---|
@@ -264,7 +303,7 @@ node test.js
 | ⑤ 钱货守恒 | **并发**转账不透支、总额守恒、摆摊成交卖家实收九成 |
 | ⑥ 切磋 | 战书带赌注、抽头正好一成、谁都不会被扣成负数 |
 | ⑦ 单人内容 | 悬赏写明去哪打几只、告示留得住、**离线的人也能收到信和银子** |
-| ⑧ 存档 | 关服落盘、留备份、**主文件写坏后能从备份救回来** |
+| ⑧ 存档 | 文件模式：关服落盘、留备份、**主文件写坏后从备份救回来**<br>MySQL 模式：**重启后分毫不差、`kill -9` 后已提交的数据还在**、表结构和索引列正确 |
 
 测试是真会红的——把之前修好的透支 bug 塞回去，第 ⑤ 组立刻报
 `✗ 并发转账不会把钱扣成负数　实际：-1`。加新玩法时请顺手补一组，

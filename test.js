@@ -11,6 +11,15 @@ const { spawn } = require('node:child_process');
 const D = require('./game-data.js');
 const { F, MAP, WEAPONS } = D;
 
+const USE_MYSQL = process.argv[2] === 'mysql';
+const DBENV = USE_MYSQL ? {
+  DB_HOST: process.env.DB_HOST || '127.0.0.1',
+  DB_PORT: process.env.DB_PORT || '3307',
+  DB_USER: process.env.DB_USER || 'paodian',
+  DB_PASS: process.env.DB_PASS || 'paodian-dev',
+  DB_NAME: process.env.DB_NAME || 'paodian',
+} : {};
+
 const PORT = 8199;
 const H    = 'http://127.0.0.1:' + PORT;
 const DIR  = fs.mkdtempSync(path.join(os.tmpdir(), 'paodian-test-'));
@@ -85,7 +94,7 @@ function boot(){
   return new Promise((res, rej) => {
     srv = spawn(process.execPath, ['server.js'], {
       cwd: __dirname,
-      env: {...process.env, PORT:String(PORT), DATA_FILE:SAVE, QUIET:'1'},
+      env: {...process.env, PORT:String(PORT), DATA_FILE:SAVE, QUIET:'1', ...DBENV},
     });
     let out = '';
     srv.stdout.on('data', d => { out += d; if(out.includes('ready')) res(); });
@@ -332,8 +341,8 @@ async function run(){
     h.close(); off.close();
   }
 
-  G('⑧ 存档：原子写、坏了能从备份救回来');
-  {
+  if(!USE_MYSQL){
+    G('⑧ 存档：原子写、坏了能从备份救回来');
     await down();
     ok(fs.existsSync(SAVE), '关服时把存档落了盘');
     ok(fs.existsSync(SAVE + '.bak'), '同时留了一份备份');
@@ -347,14 +356,65 @@ async function run(){
     await h.until(c=>c.me, 6000, '状态');
     ok(h.me.lv === 40, '主存档坏掉后，从备份把角色救了回来', h.me.lv);
     h.close();
+  } else {
+    G('⑧ 存档：MySQL 持久化');
+    // 先记下改动前的家当，再正常关服重启，看数据在不在
+    const a = new Client('老手');
+    await a.login(); await a.connect(); await a.until(c=>c.me, 6000, '状态');
+    await a.cmd('go', {to:'kezhan'}); await a.until(c=>c.room.key==='kezhan', 5000, '挪窝');
+    const snap = {gold:a.me.gold, lv:a.me.lv, jing:a.me.mats.jing, scene:'kezhan'};
+    a.close();
+    await down();                       // 正常关服（会 flush 并 close 连接池）
+    await boot();
+    const b = new Client('老手');
+    await b.login(); await b.connect(); await b.until(c=>c.me, 6000, '状态');
+    ok(b.me.gold === snap.gold, '重启后银两分毫不差', b.me.gold - snap.gold);
+    ok(b.me.lv === snap.lv, '重启后等级还在');
+    ok(b.me.mats.jing === snap.jing, '重启后材料还在');
+    ok(b.room.key === snap.scene, '重启后人还在原地');
+
+    // 拔电源：不给它存档的机会
+    const g0 = b.me.gold;
+    await b.cmd('buy', {kind:'herb'});   // 花 30 两，立刻会被 sync 标脏
+    await b.until(c=>c.me.gold === g0-30, 5000, '扣钱');
+    await wait(2500);                    // 等一个 flush 周期
+    b.close();
+    srv.kill('SIGKILL'); srv = null;     // 直接砍掉，模拟断电
+    await wait(600);
+    await boot();
+    const c2 = new Client('老手');
+    await c2.login(); await c2.connect(); await c2.until(x=>x.me, 6000, '状态');
+    ok(c2.me.gold === g0 - 30, 'kill -9 之后，已提交的那笔花销也还在', c2.me.gold - (g0-30));
+    c2.close();
+
+    // 库里确实有这些表和数据
+    const mysql = require('mysql2/promise');
+    const conn = await mysql.createConnection({host:DBENV.DB_HOST, port:Number(DBENV.DB_PORT),
+      user:DBENV.DB_USER, password:DBENV.DB_PASS, database:DBENV.DB_NAME});
+    const [[{n}]] = await conn.query('SELECT COUNT(*) AS n FROM players');
+    ok(n >= 3, '库里 players 表有 ' + n + ' 行');
+    const [rows] = await conn.query('SELECT lv, gold FROM players ORDER BY lv DESC LIMIT 1');
+    ok(rows[0].lv === 40, 'lv 抽成了独立列，排行榜可以直接 SQL 排序');
+    await conn.end();
   }
 }
 
 /* ================= 跑 ================= */
+async function wipeMysql(){
+  const mysql = require('mysql2/promise');
+  const c = await mysql.createConnection({
+    host:DBENV.DB_HOST, port:Number(DBENV.DB_PORT), user:DBENV.DB_USER,
+    password:DBENV.DB_PASS, database:DBENV.DB_NAME});
+  await c.query('DROP TABLE IF EXISTS players');
+  await c.query('DROP TABLE IF EXISTS world');
+  await c.end();
+}
+
 (async () => {
-  console.log('泡点江湖 · 主链自测');
+  console.log('泡点江湖 · 主链自测' + (USE_MYSQL ? '（MySQL 模式）' : '（本地文件模式）'));
   console.log('存档另放在 ' + SAVE + '，不碰正式的 data.json');
   seed();
+  if(USE_MYSQL) await wipeMysql();      // 每次从干净的库开始，种子靠自动迁移导入
   await boot();
   let err = null;
   try{ await run(); }catch(e){ err = e; }

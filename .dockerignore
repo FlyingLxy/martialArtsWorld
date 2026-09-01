@@ -1,0 +1,10 @@
+node_modules
+.git
+.gitignore
+data.json
+data.json.*
+*.log
+test.js
+solo-单机版.html
+*.command
+README.md

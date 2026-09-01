@@ -8,3 +8,8 @@ data.json.tmp
 *.log
 node_modules/
 .playwright-mcp/
+
+# Docker 相关
+.env
+mysql-data/
+game-data-vol/

@@ -1,0 +1,45 @@
+services:
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?先照着 .env.example 建一个 .env}
+      MYSQL_DATABASE: paodian
+      MYSQL_USER: paodian
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?先照着 .env.example 建一个 .env}
+      TZ: Asia/Shanghai
+    volumes:
+      # 这行少了，容器一删数据就全没
+      - ./mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root",
+             "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    # 不对外开放，只给同一个 compose 网络里的 game 用
+    expose:
+      - "3306"
+
+  game:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy      # 等数据库真的能连了再起，不然会连不上直接退出
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: paodian
+      DB_PASS: ${MYSQL_PASSWORD}
+      DB_NAME: paodian
+      TZ: Asia/Shanghai
+    volumes:
+      # 头一回启动时，把老的 data.json 放这儿会自动迁进 MySQL
+      - ./game-data-vol:/data
+    ports:
+      - "${GAME_PORT:-8080}:8080"
+    stop_grace_period: 20s              # 留够时间让它存档退出

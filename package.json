@@ -1,0 +1,16 @@
+{
+  "name": "paodian-jianghu",
+  "version": "1.0.0",
+  "description": "泡点江湖 —— 仿江湖聊天室的多人文字武侠",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js",
+    "test:mysql": "node test.js mysql"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "mysql2": "^3.24.2"
+  },
+  "license": "MIT"
+}
