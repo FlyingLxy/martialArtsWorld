@@ -1,0 +1,10 @@
+# 存档是运行时数据，不进仓库（里面有玩家的暗号 hash）
+data.json
+data.json.bak
+data.json.tmp
+
+# 杂物
+.DS_Store
+*.log
+node_modules/
+.playwright-mcp/

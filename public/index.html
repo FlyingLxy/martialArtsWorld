@@ -1,0 +1,655 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>泡點江湖 - 文字江湖聊天室</title>
+<style>
+  :root{
+    --page:#b9c0c8; --box:#fff; --line:#8c959f; --grid:#b7bec6;
+    --head:#3b5b81; --headb:#2c4a6b; --th:#dde5ee; --td:#f7f9fb; --alt:#eef2f6;
+    --ink:#1f2328; --dim:#6b7280; --link:#0b47a1; --vis:#5b3a8e;
+    --g:#0f7a3d; --r:#b3261e; --b:#0b47a1; --p:#7b3fa0; --y:#8a6d1a;
+  }
+  body.night{
+    --page:#0f1114; --box:#1a1e24; --line:#39414b; --grid:#2b323b;
+    --head:#223040; --headb:#151c25; --th:#232c37; --td:#1d232a; --alt:#212930;
+    --ink:#c8ced5; --dim:#7c8693; --link:#7fb0e8; --vis:#b294d8;
+    --g:#6cc08a; --r:#e2776b; --b:#7fb0e8; --p:#c39ade; --y:#d3b45e;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; background:var(--page); color:var(--ink); overflow:hidden;
+       font:13px/1.65 "SimSun","Songti SC","宋体",serif}
+  #app{display:none; height:100vh; flex-direction:column}
+  /* 顶栏 */
+  #bar{background:linear-gradient(var(--head),var(--headb)); color:#fff; padding:5px 12px;
+       display:flex; align-items:baseline; gap:12px; flex:none; border-bottom:2px solid var(--headb)}
+  #bar h1{margin:0; font-size:17px; letter-spacing:4px; text-shadow:1px 1px 0 #0004}
+  #bar .s{font-size:12px; opacity:.85}
+  #bar .sp{flex:1}
+  #bar a{color:#dbe8f7; font-size:12px; text-decoration:none; margin-left:12px; cursor:pointer}
+  #bar a:hover{color:#fff; text-decoration:underline}
+  /* 三栏 */
+  #body{flex:1; display:flex; min-height:0; background:var(--line); gap:1px}
+  #col1{width:206px; flex:none; display:flex; flex-direction:column; gap:1px}
+  #col2{flex:1; display:flex; flex-direction:column; gap:1px; min-width:0}
+  #col3{width:186px; flex:none; display:flex; flex-direction:column; gap:1px}
+  .pane{background:var(--box); overflow:auto; min-height:0}
+  .cap{background:var(--th); border-bottom:1px solid var(--grid); padding:2px 7px; font-size:12px;
+       font-weight:bold; position:sticky; top:0; z-index:2; display:flex; justify-content:space-between}
+  .cap span{font-weight:normal; color:var(--dim)}
+  .in{padding:5px 7px}
+  /* 表格 */
+  table{border-collapse:separate; border-spacing:1px; background:var(--grid); width:100%; font-size:12px}
+  td,th{background:var(--td); padding:1px 5px; line-height:1.5}
+  th{background:var(--th); text-align:left}
+  td.k{color:var(--dim); width:38px; white-space:nowrap}
+  td.v{text-align:right}
+  .bar2{height:7px; background:var(--alt); border:1px solid var(--grid); margin-top:1px}
+  .bar2 i{display:block; height:100%}
+  a{color:var(--link); cursor:pointer; text-decoration:none}
+  a:hover{color:var(--r); text-decoration:underline}
+  /* 房间列表 */
+  .rm{display:flex; justify-content:space-between; padding:2px 7px; border-bottom:1px dotted var(--grid); cursor:pointer}
+  .rm:hover{background:var(--alt)}
+  .rm.here{background:var(--th); font-weight:bold; cursor:default}
+  .rm.lock{color:var(--dim); cursor:not-allowed}
+  .rm b{font-weight:normal}
+  .rm i{font-style:normal; color:var(--g)}
+  .rm.zero i{color:var(--dim)}
+  /* 人物列表 */
+  .pr{padding:2px 7px; border-bottom:1px dotted var(--grid); cursor:pointer; line-height:1.45}
+  .pr:hover{background:var(--alt)}
+  .pr.sel{background:var(--th); outline:1px solid var(--link)}
+  .pr .n{font-weight:bold; color:var(--link)}
+  .pr .m{color:var(--y)}
+  .pr .i{font-size:11px; color:var(--dim)}
+  /* 上下屏 */
+  #pub,#me{overflow-y:auto; padding:4px 9px; white-space:pre-wrap; word-break:break-word}
+  #pub{flex:1.15} #me{flex:1}
+  #pub div,#me div{margin:1px 0}
+  #scene{flex:none; background:var(--alt); border-bottom:1px solid var(--grid); padding:5px 9px}
+  #scene .nm{font-weight:bold}
+  .acts{line-height:2; margin-top:3px}
+  .acts b{color:var(--dim); font-weight:normal; margin-right:5px; font-size:12px}
+  .acts a{margin-right:3px; padding:0 6px; border:1px solid var(--grid); background:var(--td);
+          display:inline-block; white-space:nowrap; font-size:12px}
+  .acts a:hover{background:var(--th); border-color:var(--link); text-decoration:none}
+  .acts .off{margin-right:3px; padding:0 6px; border:1px dashed var(--grid); color:var(--dim);
+             display:inline-block; font-size:12px}
+  /* 输入条 */
+  #inp{flex:none; background:var(--alt); border-top:1px solid var(--grid); padding:4px 6px}
+  #inp .l1{display:flex; gap:4px}
+  #inp select,#inp input,#inp button{font:13px "SimSun","Songti SC",serif; padding:2px 4px;
+    border:1px solid var(--line); background:var(--box); color:var(--ink)}
+  #inp input{flex:1; min-width:0}
+  #inp button{cursor:pointer; background:var(--th); padding:2px 16px}
+  #inp button:hover{background:var(--link); color:#fff}
+  #emo{margin-top:3px; font-size:12px; color:var(--dim); display:flex; align-items:center; flex-wrap:wrap; gap:2px}
+  #emo a{padding:0 5px; border:1px solid var(--grid); background:var(--td); margin-right:1px}
+  #emo b{color:var(--y); font-weight:normal; margin:0 4px}
+  .g{color:var(--g)} .r{color:var(--r)} .b{color:var(--b)} .p{color:var(--p)} .n{color:var(--g)}
+  .d{color:var(--dim)} .sys{color:var(--p)} .room{color:var(--dim)} .pk{color:var(--r)}
+  .act{color:var(--y)} .who{color:var(--g); font-weight:bold}
+  /* 登录 */
+  #login{max-width:420px; margin:8vh auto; background:var(--box); border:1px solid var(--line)}
+  #login .in{padding:16px}
+  #login input{width:100%; margin:3px 0 10px; padding:5px; font:14px "SimSun",serif;
+    border:1px solid var(--line); background:var(--box); color:var(--ink)}
+  #login button{width:100%; padding:6px; font:14px "SimSun",serif; cursor:pointer;
+    background:var(--head); color:#fff; border:1px solid var(--headb)}
+  #err{color:var(--r); min-height:20px; font-size:12px}
+  @media(max-width:760px){
+    body{overflow:auto} #app{height:auto}
+    #body{flex-direction:column} #col1,#col3{width:auto}
+    #col1{flex-direction:row} #col1 .pane{flex:1}
+    #pub,#me{height:150px; flex:none}
+  }
+</style>
+
+<div id="app">
+  <div id="bar">
+    <h1>泡點江湖</h1><span class="s" id="tag"></span>
+    <span class="sp"></span>
+    <a onclick="V.set('room')">场景</a><a onclick="V.set('bag')">行囊</a><a onclick="cmd('mail')" id="mailBtn">信箱</a><a onclick="cmd('who')">同道</a><a onclick="V.set('help')">玩法</a>
+    <a onclick="night()">昼夜</a><a onclick="logout()">离开</a>
+  </div>
+  <div id="body">
+    <div id="col1">
+      <div class="pane" style="flex:none"><div class="cap">人物状态</div><div id="stat"></div></div>
+      <div class="pane" style="flex:1"><div class="cap">江湖去处 <span id="onl"></span></div><div id="rooms"></div></div>
+    </div>
+    <div id="col2">
+      <div id="scene" class="pane" style="overflow:visible"></div>
+      <div class="pane" style="flex:1.15; display:flex; flex-direction:column">
+        <div class="cap">江湖公共频道 <span>全服聊天 · 打斗 · 公告</span></div>
+        <div id="pub"></div>
+      </div>
+      <div class="pane" style="flex:1; display:flex; flex-direction:column">
+        <div class="cap">个人消息 <span>只有你看得见</span></div>
+        <div id="me"></div>
+      </div>
+      <div id="inp">
+        <div class="l1">
+          <select id="ch">
+            <option value="world">世界</option><option value="room">本地</option>
+        <option value="sect">门派</option><option value="board">告示</option>
+          </select>
+          <input id="say" maxlength="120" placeholder="说点什么…（悄悄话：/对方名字 内容）" autocomplete="off">
+          <button onclick="send()">发　言</button>
+        </div>
+        <div id="emo"></div>
+      </div>
+    </div>
+    <div id="col3">
+      <div class="pane" style="flex:none; max-height:56%"><div class="cap">此地人物 <span id="rn"></span></div><div id="people"></div></div>
+      <div class="pane" style="flex:1"><div class="cap">江湖风云榜</div><div id="top"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="login">
+  <div id="bar" style="border-bottom:2px solid var(--headb)"><h1>泡點江湖</h1><span class="s">登録</span></div>
+  <div class="in">
+    <div style="color:var(--dim); font-size:12px; margin-bottom:12px; line-height:1.9">
+      大雪封山那年，你背着半袋干粮下了山，身无长物，只有一身使不完的力气。<br>
+      —— 头一回来的，随便起个名号和暗号，敲回车就是注册。
+    </div>
+    <div>名号</div><input id="ln" maxlength="10" placeholder="如：令狐冲">
+    <div>暗号</div><input id="lp" type="password" placeholder="记牢了，下回还用它">
+    <div id="err"></div>
+    <button onclick="login()">投　身　江　湖</button>
+  </div>
+</div>
+
+<script src="/data.js"></script>
+<script>
+let TOK = localStorage.getItem('pd_tok') || '';
+let ST = null, VIEW = 'room', ES = null, lastKey = '', SEL = '';
+const SEEN = new Set();
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+/* ---------- 登录 ---------- */
+async function post(url, o){
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(o)}).then(r=>r.json()).catch(()=>({err:'连不上服务器'}));
+}
+async function login(){
+  const name = $('ln').value.trim(), pass = $('lp').value;
+  if(!name || !pass){ $('err').textContent = '名号和暗号都得填。'; return; }
+  let r = await post('/api/login', {name, pass});
+  if(r.isNew){
+    $('err').textContent = '';
+    if(!confirm('江湖上还没有「'+name+'」这个名号。\n\n要新建一个角色吗？\n（如果你是老玩家，八成是名字打错了一个字——取消再核对一下）'))
+      { $('err').textContent = '那就再核对一下名号。'; return; }
+    r = await post('/api/login', {name, pass, create:1});
+  }
+  if(r.err){ $('err').textContent = r.err; return; }
+  TOK = r.token;
+  localStorage.setItem('pd_tok',TOK); localStorage.setItem('pd_n',name); localStorage.setItem('pd_p',pass);
+  enter();
+}
+async function relogin(){
+  const name = localStorage.getItem('pd_n'), pass = localStorage.getItem('pd_p');
+  if(!name || !pass) return false;
+  const r = await post('/api/login', {name, pass, create:1});
+  if(r.err || !r.token) return false;
+  TOK = r.token; localStorage.setItem('pd_tok', TOK); return true;
+}
+function logout(){
+  localStorage.removeItem('pd_tok'); localStorage.removeItem('pd_p');
+  if(ES) ES.close(); location.reload();
+}
+function enter(){
+  $('login').style.display='none'; $('app').style.display='flex';
+  $('say').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
+  renderEmo();
+  connect();
+}
+function connect(){
+  if(ES) ES.close();
+  ES = new EventSource('/api/events?token='+encodeURIComponent(TOK));
+  ES.onmessage = e => handle(JSON.parse(e.data));
+  ES.onerror = async () => {
+    if(ES.readyState === EventSource.CLOSED){
+      out('pub', '<span class="d">与江湖失去联系，正在重连……</span>');
+      if(await relogin()) setTimeout(connect, 1200); else setTimeout(()=>location.reload(), 2500);
+    }
+  };
+}
+function cmd(c, args){ post('/api/cmd', {token:TOK, cmd:c, args:args||{}}); }
+function send(){
+  const v = $('say').value.trim(); if(!v) return;
+  $('say').value='';
+  const ch = $('ch').value;
+  if(ch === 'board') cmd('post', {text:v});
+  else cmd('say', {ch, text:v});
+}
+
+/* ---------- 消息分屏 ---------- */
+function out(where, html, cls){
+  const box = $(where);
+  const stick = box.scrollTop + box.clientHeight > box.scrollHeight - 40;
+  const d = document.createElement('div');
+  if(cls) d.className = cls;
+  d.innerHTML = html;
+  box.appendChild(d);
+  while(box.children.length > 300) box.removeChild(box.firstChild);
+  if(stick) box.scrollTop = box.scrollHeight;
+}
+function handle(m){
+  if(m.t==='ping') return;
+  if(m.t==='state'){ ST = m; render(); return; }
+  const where = m.scope==='me' ? 'me' : 'pub';
+  if(m.t==='log') return out(where, m.html, m.cls);
+  if(m.t==='chat'){
+    if(m.id){ if(SEEN.has(m.id)) return; SEEN.add(m.id); }
+    if(m.ch==='sys') return out('pub', '<span class="sys">〔江湖〕'+m.text+'</span>');
+    const tag = {world:'', room:'〔本地〕', sect:'〔门派〕', pm:'〔悄悄话〕'}[m.ch] || '';
+    const who = m.ch==='pm'
+      ? (m.to && ST && m.from!==ST.me.name ? m.from+' 对你说' : '你对 '+m.to+' 说')
+      : m.from + (m.lv?'('+m.lv+')':'');
+    out(where, '<span class="d">'+tag+'</span><span class="who">'+esc(who)+'</span><span class="d">：</span>'+m.text);
+  }
+}
+const V = { set(v){ VIEW=v; lastKey=''; render(); } };
+function night(){
+  document.body.classList.toggle('night');
+  localStorage.setItem('pd_night', document.body.classList.contains('night')?'1':'');
+}
+
+/* ---------- 渲染 ---------- */
+function render(){
+  if(!ST) return;
+  const me = ST.me, R = ST.room;
+  $('tag').textContent = me.name+'　'+me.lv+'级　'+me.title+'　'+me.sect;
+  $('onl').textContent = '在线 '+ST.world.online+' 人';
+  $('rn').textContent = R.people.length+' 人';
+
+  const pct = (a,b) => Math.max(0,Math.min(100,a/b*100))+'%';
+  const two = (a,b,c,d) => '<tr><td class="k">'+a+'</td><td class="v">'+b+'</td><td class="k">'+c+'</td><td class="v">'+d+'</td></tr>';
+  const wide = (a,b) => '<tr><td class="k">'+a+'</td><td class="v" colspan="3">'+b+'</td></tr>';
+  const gauge = (a,c,m,col,note) => '<tr><td class="k">'+a+'</td><td class="v" colspan="3">'+c+' / '+m+
+    '<div class="bar2"><i style="background:'+col+';width:'+pct(c,m)+'"></i></div>'+
+    (note?'<div class="d" style="font-size:11px;text-align:right">'+note+'</div>':'')+'</td></tr>';
+  let h = '<table>';
+  h += two('名号','<b>'+me.name+'</b>','等级',me.lv);
+  h += wide('称号', me.title+'　<span class="d">'+me.sect+'</span>');
+  h += gauge('气血',me.hp,me.maxHp,'var(--r)');
+  h += gauge('内力',me.mp,me.maxMp,'var(--b)');
+  h += gauge('经验',me.exp,me.need,'var(--g)','还差 '+(me.need-me.exp)+' 点');
+  h += two('力量',me.str,'根骨',me.root);
+  h += two('悟性',me.mind,'身法',me.agi);
+  h += two('攻击',me.atk,'防御',me.def);
+  h += two('银两','<b class="g">'+me.gold+'</b>','伤药',me.herb);
+  h += wide('兵器', me.weapon+'　<span class="d">'+me.armor+'</span>');
+  h += two('精铁', me.mats.jing||0, '玄晶', me.mats.xuan||0);
+  h += wide('行囊', '<a onclick="V.set(\'bag\')">'+me.bagN+' / '+me.bagMax+' 件</a>');
+  if(me.sectKey) h += two('帮贡',me.gangPts,'斩敌',me.kills);
+  h += wide('战绩','胜 '+me.pkWin+'　负 '+me.pkLose+(me.sectKey?'':'　斩敌 '+me.kills));
+  if(me.spouse) h += wide('结缡','<span class="p">'+me.spouse+'</span>'+(me.together?' <span class="g">·同处</span>':''));
+  if(me.flowers) h += two('收花', me.flowers+' 朵', '', '');
+  if(me.quest) h += wide('悬赏', '<span class="p">'+me.quest.name+' '+me.quest.got+' / '+me.quest.need+
+    '</span>'+(me.quest.where?'<div class="d" style="font-size:11px">'+me.quest.where+'</div>':''));
+  const mb = $('mailBtn');
+  if(mb) mb.innerHTML = me.mailN ? '信箱<span style="color:#ffd76e">('+me.mailN+')</span>' : '信箱';
+  h += '</table>';
+  if(me.pot>0) h += '<div class="acts" style="padding:3px 5px"><b>潜能 '+me.pot+'：</b>'+
+    ['str','力量','root','根骨','mind','悟性','agi','身法'].reduce((s,_,i,A)=>
+      i%2 ? s : s+'<a onclick="cmd(\'pot\',{k:\''+A[i]+'\'})">+'+A[i+1]+'</a>','')+'</div>';
+  h += '<div class="in d" style="font-size:11px">武学：'+me.skills.join('、')+'</div>';
+  $('stat').innerHTML = h;
+
+  $('rooms').innerHTML = ST.world.rooms.map(r=>
+    '<div class="rm'+(r.here?' here':'')+(r.lock?' lock':'')+(r.n?'':' zero')+'"'+
+    (r.here||r.lock?'':' onclick="cmd(\'go\',{to:\''+r.k+'\'})"')+'>'+
+    '<b>'+(r.here?'▶ ':'')+r.name+(r.lock?' <span class="d">〔本门弟子〕</span>':'')+'</b><i>'+r.n+'</i></div>').join('');
+
+  $('people').innerHTML = R.people.map(q=>
+    '<div class="pr'+(SEL===q.name?' sel':'')+'" onclick="sel(\''+q.name+'\')">'+
+    '<span class="'+(q.me?'m':'n')+'">'+q.name+'</span>'+
+    '<span class="i"> '+q.lv+'级</span><br><span class="i">'+q.sect+' · </span>'+
+    '<span class="i '+(q.act==='修行中'?'g':q.act==='激斗中'?'r':'d')+'">'+q.act+'</span></div>').join('')
+    || '<div class="in d">此地空无一人。</div>';
+
+  $('top').innerHTML = ST.world.top.map((q,i)=>
+    '<div class="pr" onclick="sel(\''+q.name+'\')"><span class="i">'+(i+1)+'. </span>'+
+    '<span class="'+(q.on?'n':'i')+'">'+q.name+'</span><span class="i"> '+q.lv+'级 '+
+    (q.on?'<span class="g">·在</span>':'')+'</span><br><span class="i">'+q.title+' · '+q.sect+'</span></div>').join('');
+
+  const key = JSON.stringify([VIEW, R, me.idle&&me.idle.act, ST.pending, me.pot, me.gold, me.lv, me.herb,
+    me.spouse, me.weapon, me.armor, me.autoFight, me.bagN, me.mats.jing, me.mats.xuan,
+    me.quest && [me.quest.name, me.quest.got], me.mailN, ST.room.shadows,
+    ST.battle && [ST.battle.round, ST.battle.foe.hp, ST.battle.myTurn, ST.battle.stunned, ST.battle.skills.map(s=>s.ok)]]);
+  if(key !== lastKey){
+    lastKey = key;
+    $('scene').innerHTML = VIEW==='room' ? viewRoom() : VIEW==='help' ? viewHelp()
+      : VIEW==='shop' ? viewShop() : VIEW==='sect' ? viewSect() : VIEW==='learn' ? viewLearn()
+      : VIEW==='market' ? viewMarket() : VIEW==='bag' ? viewBag() : viewRoom();
+  }
+  const tip = $('idletip');
+  if(tip && VIEW==='room' && !ST.battle) tip.innerHTML = idleTip();
+  const cd = $('cd');
+  if(cd && ST.battle && ST.battle.wait) cd.textContent = Math.ceil(ST.battle.wait/1000);
+}
+function sel(n){ SEL = (SEL===n?'':n); renderEmo(); lastKey=''; render(); }
+function renderEmo(){
+  const t = SEL ? '对 <b>'+SEL+'</b>' : '<b>独自</b>';
+  $('emo').innerHTML = t + ACTS.map(a=>'<a onclick="cmd(\'act\',{k:\''+a.k+'\',name:\''+SEL+'\'})">'+a.n+'</a>').join('')
+    + (SEL ? '　<a onclick="cmd(\'look\',{name:\''+SEL+'\'})">打量</a>'+
+             '<a onclick="cmd(\'pk\',{name:\''+SEL+'\'})">切磋</a>'+
+             '<a onclick="betPk(\''+SEL+'\')">押注切磋</a>'+
+             '<a onclick="cmd(\'flower\',{name:\''+SEL+'\'})">送花 '+PRICE.flower+'两</a>'+
+             '<a onclick="doPropose(\''+SEL+'\')">提亲</a>'+
+             '<a onclick="give(\''+SEL+'\')">塞钱</a>'+
+             '<a onclick="pmTo(\''+SEL+'\')">悄悄话</a>'+
+             '<a onclick="doMail(\''+SEL+'\')">写信</a>'
+           : '　<span class="d">（点右边的人名，可对他做动作）</span>');
+}
+function betPk(n){
+  const v = prompt('跟 '+n+' 押多少两切磋？双方同押，赢家通吃，看客抽一成彩头。', '500');
+  if(v) cmd('pk',{name:n, bet:v});
+}
+function doPropose(n){
+  if(confirm('向 '+n+' 提亲？聘礼 '+PRICE.betrothal+' 两，对方应了才算数。'))
+    cmd('propose',{name:n});
+}
+function give(n){ const v = prompt('给 '+n+' 多少两银子？','100'); if(v) cmd('give',{name:n,n:v}); }
+function pmTo(n){ $('say').value = '/'+n+' '; $('say').focus(); }
+function doMail(n){
+  const who = n || prompt('写给谁？（名号）');
+  if(!who) return;
+  const text = prompt('给 '+who+' 写点什么？（对方不在线也收得到）');
+  if(text === null) return;
+  const gold = prompt('顺便捎点银子？不捎就填 0', '0');
+  cmd('sendmail', {to:who, text, gold: gold||0});
+}
+
+function viewBattle(){
+  const B = ST.battle, me = ST.me;
+  const pct = Math.max(0, Math.min(100, B.foe.hp / B.foe.max * 100));
+  let h = '<div class="nm">【交手中　第 '+Math.max(1,B.round)+' 合'+(B.bet?'　赌注 '+B.bet+' 两':'')+'】</div>';
+  h += '<div style="margin:2px 0"><b class="r">'+B.foe.name+'</b>'+(B.foe.lv?' <span class="d">'+B.foe.lv+'级</span>':'')+
+       '　'+B.foe.hp+' / '+B.foe.max+
+       '<div class="bar2"><i style="background:var(--r);width:'+pct+'%"></i></div></div>';
+  const st = [];
+  if(B.guard) st.push('<span class="g">护体在身</span>');
+  if(B.dodge) st.push('<span class="b">身法飘忽</span>');
+  if(B.stunned) st.push('<span class="r">气血翻涌，下招使不出</span>');
+  if(st.length) h += '<div style="font-size:12px">'+st.join('　')+'</div>';
+
+  if(me.autoFight){
+    h += '<div class="acts"><b>自动应敌：</b><span class="d">刀光剑影，看着就行。</span>'+
+         '<a onclick="cmd(\'autofight\')">改成自己出招</a></div>';
+  }else if(B.myTurn){
+    h += '<div class="acts"><b>该你出招'+(B.wait?'（<span class="r" id="cd">'+Math.ceil(B.wait/1000)+'</span> 秒后替你出手）':'')+
+         '：</b><br>'+ B.skills.map(s=>
+      s.ok ? '<a onclick="cmd(\'strike\',{k:\''+s.k+'\'})" title="'+s.note+'">'+s.name+
+             '<span class="d"> 内力'+s.mp+'·威力×'+s.mult+'</span></a>'
+           : '<span class="off">'+s.name+'<span class="d"> 内力不足</span></span>').join('')+
+      '</div>';
+    const withNote = B.skills.filter(s=>s.note);
+    if(withNote.length) h += '<div class="d" style="font-size:11px">'+
+      withNote.map(s=>s.name+'：'+s.note).join('　｜　')+'</div>';
+    h += '<div class="acts"><a onclick="cmd(\'autofight\')">交给自动</a></div>';
+  }else{
+    h += '<div class="acts"><b>对方出招中……</b><a onclick="cmd(\'autofight\')">交给自动</a></div>';
+  }
+  return h;
+}
+function viewRoom(){
+  const R = ST.room, me = ST.me;
+  if(ST.battle) return viewBattle();
+  let h = '';
+  if(ST.pending){
+    const P = ST.pending;
+    h += P.type==='wed'
+      ? '<div style="color:var(--p)"><b>♡ '+P.from+' 向你提亲，聘礼 '+PRICE.betrothal+' 两！</b>　'+
+        '<a onclick="cmd(\'answer\',{ok:1})">［应了］</a> <a onclick="cmd(\'answer\',{ok:0})">［婉拒］</a></div>'
+      : '<div style="color:var(--r)"><b>⚔ '+P.from+' 向你下了战书'+(P.bet?'，赌注 '+P.bet+' 两':'')+'！</b>　'+
+        '<a onclick="cmd(\'answer\',{ok:1})">［应战］</a> <a onclick="cmd(\'answer\',{ok:0})">［婉拒］</a></div>';
+  }
+  h += '<div class="nm">【'+R.name+'】<span class="d"> '+R.desc+'</span></div>';
+  let a = '';
+  if(R.paodian){
+    if(me.idle) a += '<a onclick="cmd(\'idle\')">◆ 收功歇会儿（已得 '+me.idle.acc+' 经验）</a>';
+    else if(me.lv >= R.paodian.lv) a += '<a onclick="cmd(\'idle\')" style="border:2px solid var(--g);font-weight:bold">◆ 接着'+
+      R.paodian.act+'</a>';
+    else a += '<span class="off">'+R.paodian.act+'（需'+R.paodian.lv+'级）</span>';
+  }
+  if(R.hunt)     a += '<a onclick="cmd(\'hunt\')">寻敌较量</a>';
+
+  if(R.gamble)   a += '<a onclick="cmd(\'gamble\')">押大小</a>';
+  if(R.shop)     a += '<a onclick="V.set(\'shop\')">看看货色</a>';
+  if(R.treat)    a += '<a onclick="cmd(\'treat\')">请满屋子喝酒</a>';
+  if(R.board)    a += '<a onclick="cmd(\'board\')">看墙上告示</a>';
+  if(R.quest){
+    a += me.quest
+      ? (me.quest.got >= me.quest.need
+          ? '<a onclick="cmd(\'turnin\')" style="border-color:var(--g)">回禀捕头领赏</a>'
+          : '<span class="off">悬赏在身 '+me.quest.got+'/'+me.quest.need+'</span>')
+      : '<a onclick="cmd(\'quest\')">接一桩悬赏</a>';
+    if(me.quest && me.quest.where && me.quest.got < me.quest.need)
+      a += '<span class="d" style="font-size:12px">　（'+me.quest.name+'在'+me.quest.where+'）</span>';
+  }
+  if(R.market)   a += '<a onclick="V.set(\'market\')">逛长街集市</a>';
+  if(me.spouse)  a += '<a onclick="if(confirm(\'摆一场喜宴要 '+PRICE.wedding+' 两，全江湖同贺，确定？\'))cmd(\'wedding\')">大摆喜宴</a>';
+  if(R.joinsect) a += '<a onclick="V.set(\'sect\')">拜师入门</a>';
+  if(R.learn)    a += '<a onclick="V.set(\'learn\')">求师授艺</a>';
+  if(R.gang)     a += '<a onclick="cmd(\'gang\')">下山械斗</a><a onclick="cmd(\'exchange\')">帮贡换赏</a>';
+  a += '<a onclick="cmd(\'rest\')">打坐疗伤</a>';
+  if(me.herb>0)  a += '<a onclick="cmd(\'herb\')">服金疮药</a>';
+  h += '<div class="acts">'+a+'</div>';
+  if(R.arena){
+    const sh = ST.room.shadows || [];
+    h += '<div class="acts"><b>台上留影：</b>';
+    h += sh.length
+      ? sh.map(s=> s.mine
+          ? '<span class="off">你自己（'+s.lv+'级）胜'+s.win+' 负'+s.lose+'</span>'
+          : '<a onclick="cmd(\'fightshadow\',{name:\''+s.name+'\'})">'+s.name+'（'+s.lv+'级 '+s.sect+
+            '）<span class="d">胜'+s.win+' 负'+s.lose+'</span></a>').join('')
+      : '<span class="d">台上还没人留下拳脚。</span>';
+    h += '<a onclick="cmd(\'shadow\')" style="border-color:var(--g)">留下我的影子守擂</a>'+
+         '<span class="d" style="font-size:12px">　影子会使你会的武功，你不在时也替你应战；打影子不输银子</span></div>';
+  }
+  if(R.arena) h += '<div class="acts"><b>守擂高手：</b>'+ARENA.map((x,i)=>
+    me.lv+12 >= x.lv
+      ? '<a onclick="cmd(\'arena\',{i:'+i+'})">'+x.name+'（'+x.lv+'级）</a>'
+      : '<span class="off">'+x.name+'（'+x.lv+'级）</span>').join('')+
+    '<span class="d" style="font-size:12px">　量力而行，输了要丢一成银子</span></div>';
+  h += '<div class="d" id="idletip" style="font-size:12px"></div>';
+  return h;
+}
+function idleTip(){
+  const me = ST.me, R = ST.room, pd = MAP[R.key] && MAP[R.key].paodian;
+  if(!pd) return me.idle ? '你正'+me.idle.act+'，'+span(me.idle.since) : '';
+  if(me.lv < pd.lv) return '<span class="d">此处需 '+pd.lv+' 级才能修行。</span>';
+  const per = F.idleTick(me, pd) * 30 * (me.together ? 1.1 : 1);   // 每分钟能得多少
+  const left = Math.max(0, me.need - me.exp);
+  const tip = '每分钟约 <b class="g">'+per.toFixed(1)+'</b> 点　·　还差 <b>'+left+
+              '</b> 点，照这速度约 <b>'+dur(left/per)+'</b>升到 '+(me.lv+1)+' 级';
+  const both = me.together ? '　<span class="p">与'+me.spouse+'同处，多一成</span>' : '';
+  return me.idle
+    ? '你正'+me.idle.act+'，'+span(me.idle.since)+'　已得 '+me.idle.acc+' 点　—— '+tip+both
+    : '<b class="r">你歇着呢，经验不涨</b> —— 点上面绿框接着修行。'+tip+both;
+}
+function dur(min){
+  if(!isFinite(min) || min<=0) return '——';
+  if(min < 1)  return '不到 1 分钟';
+  if(min < 60) return Math.round(min)+' 分钟';
+  if(min < 60*24) return (min/60).toFixed(1)+' 小时';
+  return (min/1440).toFixed(1)+' 天';
+}
+function span(since){
+  const s = Math.floor((Date.now()-since)/1000);
+  return s<60 ? '已泡 '+s+' 秒' : s<3600 ? '已泡 '+Math.floor(s/60)+' 分'
+       : '已泡 '+Math.floor(s/3600)+' 时 '+Math.floor(s%3600/60)+' 分';
+}
+const back = () => '<div class="acts"><a onclick="V.set(\'room\')">← 回到'+ST.room.name+'</a></div>';
+
+function viewShop(){
+  const R = ST.room, me = ST.me;
+  let h = '<div class="nm">【'+R.name+'　'+({inn:'酒菜药材',smith:'铁匠铺',city:'洛阳兵器行'}[R.shop])+'】</div>';
+  if(R.shop==='inn'){
+    h += '<div class="acts"><b>酒菜：</b>'+
+      '<a onclick="cmd(\'buy\',{kind:\'food\'})">女儿红一坛　20两（回满气血内力）</a>'+
+      '<a onclick="cmd(\'buy\',{kind:\'herb\'})">金疮药　30两</a></div>';
+    return h + back();
+  }
+  const smith = R.shop==='smith';
+  const line = (list,kind,has) => '<div class="acts">'+list.map((it,i)=>{
+    if(!it.price || (smith && it.price>1000) || (!smith && it.price<=220)) return '';
+    const own = has===it.name;
+    return own ? '<span class="off">'+it.name+'（在用）</span>'
+      : me.gold>=it.price
+        ? '<a onclick="cmd(\'buy\',{kind:\''+kind+'\',i:'+i+'})">'+it.name+' '+
+          (kind==='w'?'攻+'+it.atk:'防+'+it.def)+'　'+it.price+'两</a>'
+        : '<span class="off">'+it.name+' '+(kind==='w'?'攻+'+it.atk:'防+'+it.def)+'　'+it.price+'两</span>';
+  }).join('')+'</div>';
+  h += '<div class="acts"><b>兵器：</b></div>'+line(WEAPONS,'w',me.weapon);
+  h += '<div class="acts"><b>护体：</b></div>'+line(ARMORS,'a',me.armor);
+  if(smith) h += '<div class="d" style="font-size:12px">老铁匠：更好的家伙什，得进洛阳城去寻。</div>';
+  if(R.forge) h += forgePanel();
+  return h + back();
+}
+function forgePanel(){
+  const me = ST.me;
+  const one = (kind) => {
+    const isW = kind==='w';
+    const it = isW ? WEAPONS[me.wIdx] : ARMORS[me.aIdx];
+    const n  = isW ? me.wLv : me.aLv;
+    const nm = it.name + (n>0?'+'+n:'');
+    if(!it.price) return '<tr><td>'+(isW?'兵器':'护体')+'</td><td class="d" colspan="4">'+it.name+' 不值一打</td></tr>';
+    if(n >= F.forgeMax) return '<tr><td>'+(isW?'兵器':'护体')+'</td><td><b class="g">'+nm+
+      '</b></td><td class="g" colspan="3">已至顶，炉火纯青</td></tr>';
+    const cost = F.forgeCost(it.price, n), rate = F.forgeRate(n), mat = F.forgeMat(n);
+    const have = me.mats[mat.k] || 0, matOk = have >= mat.n;
+    const now  = isW ? it.atk*F.forge(n)   : it.def*F.forge(n);
+    const next = isW ? it.atk*F.forge(n+1) : it.def*F.forge(n+1);
+    return '<tr><td>'+(isW?'兵器':'护体')+'</td><td><b>'+nm+'</b> → '+it.name+'+'+(n+1)+'</td>'+
+      '<td>'+(isW?'攻':'防')+' '+Math.round(now)+' → <span class="g">'+Math.round(next)+'</span></td>'+
+      '<td>'+cost+' 两<br><span class="'+(matOk?'g':'r')+'" style="font-size:11px">'+
+      MATS[mat.k].name+'×'+mat.n+'（有 '+have+'）</span></td><td>'+
+      (rate>=.5?'<span class="g">':'<span class="r">')+Math.round(rate*100)+'%</span>'+
+      (n>=4?'<span class="d"> 失败降级</span>':'')+'</td><td>'+
+      (me.gold>=cost && matOk ? '<a onclick="cmd(\'forge\',{kind:\''+kind+'\'})">打造</a>'
+        : !matOk ? '<span class="d">缺'+MATS[mat.k].name+'</span>' : '<span class="d">银两不足</span>')+'</td></tr>';
+  };
+  return '<div class="nm" style="margin-top:6px">【打造　炉子就在里屋，敢不敢试】</div>'+
+    '<table><tr><th>部位</th><th>物件</th><th>属性</th><th>费用</th><th>成算</th><th style="width:52px"></th></tr>'+
+    one('w') + one('a') + '</table>'+
+    '<div class="d" style="font-size:12px">越往上越贵、成算越低；+5 起失败要掉一级。'+
+    '精铁玄晶都从怪身上搜，玄晶要 20 级往上的硬点子才有。打造过的东西可以摆到长街上卖。</div>';
+}
+function viewBag(){
+  const me = ST.me, atMarket = ST.room.market;
+  let h = '<div class="nm">【行囊　'+me.bagN+' / '+me.bagMax+' 件】</div>';
+  h += '<div class="acts"><b>身上：</b>'+
+    '<a onclick="cmd(\'unequip\',{kind:\'w\'})">'+me.weapon+' ✕卸下</a>'+
+    '<a onclick="cmd(\'unequip\',{kind:\'a\'})">'+me.armor+' ✕卸下</a>'+
+    '<span class="d">　精铁 '+(me.mats.jing||0)+'　玄晶 '+(me.mats.xuan||0)+'</span></div>';
+  h += '<table><tr><th>物件</th><th>属性</th><th>估价</th><th style="width:150px">　</th></tr>';
+  if(!me.bag.length) h += '<tr><td class="d" colspan="4">行囊空空。打怪有一成二的机会掉装备。</td></tr>';
+  for(const it of me.bag){
+    h += '<tr><td><b>'+it.name+'</b></td><td class="d">'+it.gain+'</td><td class="d">'+it.price+' 两</td><td>'+
+      '<a onclick="cmd(\'equip\',{i:'+it.i+'})">换上</a>　'+
+      (atMarket ? '<a onclick="doStall('+it.i+',\''+it.name+'\','+it.price+')">摆摊</a>　'
+                : '<span class="d">摆摊</span>　')+
+      '<a onclick="if(confirm(\'扔掉 '+it.name+'？\'))cmd(\'dropit\',{i:'+it.i+'})">扔了</a></td></tr>';
+  }
+  h += '</table>';
+  if(!atMarket) h += '<div class="d" style="font-size:12px">要摆摊得去洛阳城·长街。</div>';
+  return h + back();
+}
+function viewMarket(){
+  const me = ST.me, list = ST.room.stalls || [];
+  let h = '<div class="nm">【长街集市　摆摊寄卖，成交抽一成】</div>';
+  h += '<table><tr><th>物件</th><th>属性</th><th>摊主</th><th>要价</th><th style="width:52px"></th></tr>';
+  if(!list.length) h += '<tr><td class="d" colspan="5">街面上空荡荡的，一个摊子也没有。</td></tr>';
+  for(const m of list){
+    h += '<tr><td><b>'+m.name+'</b></td><td class="d">'+m.gain+'</td><td>'+m.seller+'</td><td>'+m.price+' 两</td><td>'+
+      (m.mine ? '<a onclick="cmd(\'unstall\',{id:'+m.id+'})">收摊</a>'
+        : me.gold>=m.price ? '<a onclick="cmd(\'buystall\',{id:'+m.id+'})">买下</a>'
+        : '<span class="d">买不起</span>')+'</td></tr>';
+  }
+  h += '</table>';
+  h += '<div class="acts"><b>摆摊：</b>';
+  if(!me.bag.length) h += '<span class="d">行囊里没东西可卖（先去<a onclick="V.set(\'bag\')">行囊</a>把身上的卸下来）</span>';
+  else h += me.bag.map(it=>'<a onclick="doStall('+it.i+',\''+it.name+'\','+it.price+')">'+it.name+'</a>').join('')+
+            '<span class="d" style="font-size:12px">　卖掉的钱扣一成抽头</span>';
+  h += '</div>';
+  return h + back();
+}
+function doStall(slot, name, base){
+  const v = prompt('把 '+name+' 摆出去，要价多少两？', String(Math.max(100, base)));
+  if(v) cmd('stall',{i:slot, price:v});
+}
+function viewSect(){
+  const me = ST.me;
+  let h = '<div class="nm">【山门前　五大门派收徒】</div>';
+  const CN = {str:'力量',root:'根骨',mind:'悟性',agi:'身法'};
+  h += '<table><tr><th>门派</th><th>掌门</th><th>路数</th><th>加成</th><th style="width:52px"></th></tr>';
+  for(const k in SECTS){ const S = SECTS[k];
+    h += '<tr><td><b>'+S.name+'</b></td><td class="d">'+S.master+'</td><td class="d">'+S.desc+'</td><td>'+
+      Object.keys(S.bonus).map(b=>CN[b]+'+'+S.bonus[b]).join(' ')+'</td><td>'+
+      (me.sectKey ? '<span class="d">—</span>' : me.lv<3 ? '<span class="d">需3级</span>'
+        : '<a onclick="cmd(\'join\',{sect:\''+k+'\'})">拜入</a>')+'</td></tr>'; }
+  h += '</table><div class="d" style="font-size:12px">入门之后不可改换，想清楚再拜。</div>';
+  return h + back();
+}
+function viewLearn(){
+  const me = ST.me;
+  let h = '<div class="nm">【本门后山　'+(me.sectKey?SECTS[me.sectKey].master:'')+'】</div><table>'+
+          '<tr><th>武学</th><th>门槛</th><th>束脩</th><th>内力</th><th>威力</th><th style="width:52px"></th></tr>';
+  for(const k in SKILLS){ const s = SKILLS[k]; if(s.sect !== me.sectKey) continue;
+    const has = me.skills.includes(s.name);
+    const price = s.gang ? s.gang+' 帮贡' : s.cost+' 两';
+    const afford = s.gang ? me.gangPts>=s.gang : me.gold>=s.cost;
+    h += '<tr><td>'+(s.gang?'<span class="p">★</span> ':'')+'《'+s.name+'》<span class="d"> '+s.txt+'</span>'+
+      (s.note?'<div class="d" style="font-size:11px">'+s.note+'</div>':'')+'</td>'+
+      '<td>'+s.lv+'级</td><td>'+price+'</td><td>'+s.mp+'</td><td>×'+s.mult+'</td><td>'+
+      (has?'<span class="g">已练成</span>':me.lv<s.lv?'<span class="d">火候未到</span>'
+        :!afford?'<span class="d">'+(s.gang?'帮贡不足':'银两不足')+'</span>'
+        :'<a onclick="cmd(\'learn\',{k:\''+k+'\'})">参研</a>')+'</td></tr>'; }
+  return h + '</table>' + back();
+}
+function viewHelp(){
+  const me = ST.me, left = Math.max(0, me.need - me.exp);
+  let t = '<div class="nm">【各处泡点速度　按你现在 '+me.lv+' 级、悟性 '+me.mind+' 算】</div>'+
+    '<table><tr><th>修行之处</th><th>动作</th><th>门槛</th><th>每分钟</th><th>每小时</th>'+
+    '<th>升到 '+(me.lv+1)+' 级</th></tr>';
+  for(const k in MAP){
+    const pd = MAP[k].paodian; if(!pd) continue;
+    const ok = me.lv >= pd.lv, per = F.idleTick(me, pd) * 30;
+    t += '<tr><td>'+(k===ST.room.key?'▶ ':'')+MAP[k].name+'</td><td class="d">'+pd.act+'</td>'+
+      '<td>'+pd.lv+' 级</td>'+
+      (ok ? '<td class="g">'+per.toFixed(1)+' 点</td><td>'+Math.round(per*60)+' 点</td><td>'+dur(left/per)+'</td>'
+          : '<td class="d" colspan="3">火候未到</td>')+'</tr>';
+  }
+  t += '</table><div class="d" style="font-size:12px">还差 '+left+' 点升级。'+
+       '等级超出场地门槛越多，收益衰减越狠（最低剩两成半），所以到点就该挪窝。悟性每点加 2% 收益。</div>';
+  return t + '<div class="nm" style="margin-top:6px">【玩法】</div><div class="d" style="line-height:1.9">'+
+  '<b>泡点</b>：到了能修行的地方<b>自动开始</b>长经验，页面开着就一直涨，关掉就停；打完架自动接着泡。<br>'+
+  '<b>左下角</b>是江湖各处去处和当前人数，哪儿人多去哪儿。<b>右边</b>是此地人物，点名字选中他，就能对他抱拳、敬酒、切磋、塞钱、说悄悄话。<br>'+
+  '<b>中间上屏</b>是全服公共频道（聊天、打斗、公告），<b>下屏</b>只显示你自己的收益和私事。<br>'+
+  '<b>一个人也有事干</b>：客栈墙上可以贴<b>告示</b>（底下频道选「告示」），离线也留得住；'+
+  '找捕头<b>接悬赏</b>，宰够数回来领赏钱和打造材料；给任何人<b>写信</b>，对方不在线照样收得到，还能随信捎银子。<br>'+
+  '<b>拜师</b>：3级后去山门，五派任选。<b>切磋</b>：在洛阳擂台可向人下战书，对方应战便当场比试，满屋子人都看得见。</div>' + back();
+}
+
+/* ---------- 起 ---------- */
+if(localStorage.getItem('pd_night')) document.body.classList.add('night');
+$('lp').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+$('ln').addEventListener('keydown', e=>{ if(e.key==='Enter') $('lp').focus(); });
+if(TOK) enter();
+else if(localStorage.getItem('pd_n') && localStorage.getItem('pd_p'))
+  relogin().then(ok => ok ? enter() : $('ln').focus());
+else $('ln').focus();
+setInterval(()=>{
+  if(!ST) return;
+  const t = $('idletip');
+  if(VIEW==='room' && t && !ST.battle) t.innerHTML = idleTip();
+  const cd = $('cd');
+  if(cd){ const n = +cd.textContent; if(n > 0) cd.textContent = n - 1; }
+}, 1000);
+</script>

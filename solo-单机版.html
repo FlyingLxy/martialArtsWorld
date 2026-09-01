@@ -1,0 +1,707 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>泡点江湖</title>
+<style>
+  :root{
+    --bg:#0b0c0a; --panel:#131511; --line:#2e3327; --ink:#cfd0b8;
+    --dim:#7d8270; --gold:#d8b26a; --red:#c25a4d; --green:#7fa860;
+    --blue:#6f96b8; --purple:#9a7cb0;
+  }
+  :root[data-theme="light"]{
+    --bg:#e8e4d5; --panel:#f2eee0; --line:#c5bfa8; --ink:#33301f;
+    --dim:#6e6850; --gold:#8a6420; --red:#992f22; --green:#3d6b1f;
+    --blue:#2c5578; --purple:#63407a;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Courier New",Menlo,Consolas,"Songti SC","STSong",serif;
+    font-size:15px; line-height:1.75;
+    display:flex; justify-content:center; padding:12px;
+  }
+  #wrap{width:100%; max-width:860px}
+  h1{
+    font-size:22px; letter-spacing:.5em; text-align:center; margin:4px 0 2px;
+    color:var(--gold); font-weight:normal;
+  }
+  .sub{text-align:center; color:var(--dim); font-size:12px; margin-bottom:10px}
+  .box{border:1px solid var(--line); background:var(--panel); padding:10px 12px; margin-bottom:10px}
+  .box h2{
+    font-size:13px; margin:0 0 8px; color:var(--dim); font-weight:normal;
+    border-bottom:1px dashed var(--line); padding-bottom:4px;
+  }
+  #top{display:flex; gap:10px; align-items:stretch}
+  #top .box{flex:1; margin-bottom:0}
+  #stat{min-width:246px; flex:0 0 246px}
+  #log{height:270px; overflow-y:auto; white-space:pre-wrap; word-break:break-word}
+  #log div{margin:1px 0}
+  .row{display:flex; justify-content:space-between; gap:8px}
+  .row span:last-child{color:var(--ink)}
+  .k{color:var(--dim)}
+  .bar{height:9px; border:1px solid var(--line); margin:2px 0 5px; position:relative; background:var(--bg)}
+  .bar i{display:block; height:100%; transition:width .3s}
+  .desc{color:var(--dim); margin-bottom:8px}
+  a.cmd{
+    color:var(--blue); cursor:pointer; text-decoration:none; margin-right:12px;
+    display:inline-block; white-space:nowrap;
+  }
+  a.cmd:hover{color:var(--gold); text-decoration:underline}
+  a.cmd.r{color:var(--red)}
+  a.cmd.off{color:var(--line); cursor:not-allowed; text-decoration:none}
+  .grp{margin:6px 0}
+  .grp b{color:var(--dim); font-weight:normal; margin-right:8px; font-size:12px}
+  .g{color:var(--gold)} .r{color:var(--red)} .n{color:var(--green)}
+  .b{color:var(--blue)} .p{color:var(--purple)} .d{color:var(--dim)}
+  #foot{text-align:center; color:var(--line); font-size:11px; padding:6px 0 20px}
+  #foot a{color:var(--dim); cursor:pointer; margin:0 6px}
+  input,select{
+    background:var(--bg); border:1px solid var(--line); color:var(--ink);
+    font-family:inherit; font-size:14px; padding:4px 6px;
+  }
+  @media(max-width:700px){
+    #top{flex-direction:column} #stat{flex:1 1 auto; min-width:0}
+    #top .box:first-child{margin-bottom:10px}
+    #log{height:200px}
+  }
+</style>
+
+<div id="wrap">
+  <h1>泡點江湖</h1>
+  <div class="sub">—— 一个人的武侠世界 · 挂机即修行 ——</div>
+
+  <div id="top">
+    <div class="box" id="stat"><h2>[ 人物状态 ]</h2><div id="statBody"></div></div>
+    <div class="box"><h2>[ 江湖见闻 ]</h2><div id="log"></div></div>
+  </div>
+
+  <div class="box">
+    <h2 id="sceneName">[ 场景 ]</h2>
+    <div class="desc" id="sceneDesc"></div>
+    <div id="acts"></div>
+  </div>
+
+  <div id="foot">
+    <a onclick="G.save(1)">存档</a>|<a onclick="G.wipe()">重开人生</a>|<a onclick="G.theme()">明/暗</a>
+    <br>泡点江湖 v1.0 · 存档保存在本机浏览器中
+  </div>
+</div>
+<script>
+/* ===================== 数 据 ===================== */
+
+const SECTS = {
+  shaolin:{name:'少林寺', at:'root', desc:'外家之宗，横练金钟罩，根骨最厚。',
+    bonus:{root:3}, master:'玄慈方丈'},
+  wudang:{name:'武当派', at:'mind', desc:'内家之首，以柔克刚，内力绵长。',
+    bonus:{mind:3}, master:'冲虚道长'},
+  emei:{name:'峨眉派', at:'agi', desc:'剑走轻灵，身法飘忽如烟。',
+    bonus:{agi:3}, master:'灭绝师太'},
+  gaibang:{name:'丐帮', at:'str', desc:'天下第一大帮，掌法刚猛无俦。',
+    bonus:{str:3}, master:'洪长老'},
+  huashan:{name:'华山派', at:'all', desc:'气剑双修，样样均衡。',
+    bonus:{str:1,root:1,mind:1,agi:1}, master:'岳掌门'},
+};
+
+// 武功：lv门槛 / 学费 / 内力消耗 / 伤害倍率
+const SKILLS = {
+  // 通用
+  pugong:  {name:'寻常拳脚', sect:null, lv:1,  cost:0,    mp:0,  mult:1.0, txt:'一记直拳'},
+  // 少林
+  luohan:  {name:'罗汉拳',   sect:'shaolin', lv:3,  cost:50,   mp:4,  mult:1.5, txt:'罗汉拳势沉如山'},
+  weituo:  {name:'韦陀掌',   sect:'shaolin', lv:12, cost:400,  mp:10, mult:2.3, txt:'韦陀献杵，掌风轰然'},
+  yijin:   {name:'易筋经',   sect:'shaolin', lv:28, cost:2500, mp:24, mult:3.6, txt:'易筋经真气鼓荡'},
+  // 武当
+  taiji:   {name:'太极拳',   sect:'wudang', lv:3,  cost:50,   mp:3,  mult:1.4, txt:'太极圆转，四两拨千斤'},
+  tiyun:   {name:'梯云纵',   sect:'wudang', lv:12, cost:400,  mp:9,  mult:2.2, txt:'身形拔起，凌空一击'},
+  chunyang:{name:'纯阳无极功',sect:'wudang', lv:28, cost:2500, mp:22, mult:3.5, txt:'纯阳真气破空而出'},
+  // 峨眉
+  yunv:    {name:'玉女剑法', sect:'emei', lv:3,  cost:50,   mp:4,  mult:1.5, txt:'剑光如雪，缠绵不绝'},
+  jinding: {name:'金顶绵掌', sect:'emei', lv:12, cost:400,  mp:9,  mult:2.2, txt:'绵掌吞吐，暗劲透体'},
+  jiuyang: {name:'九阴白骨爪',sect:'emei', lv:28, cost:2500, mp:23, mult:3.7, txt:'白骨爪破风而至'},
+  // 丐帮
+  dagou:   {name:'打狗棒法', sect:'gaibang', lv:3,  cost:50,   mp:4,  mult:1.6, txt:'绊字诀一棒扫出'},
+  xianglong:{name:'降龙掌',  sect:'gaibang', lv:12, cost:400,  mp:11, mult:2.4, txt:'亢龙有悔，掌力如潮'},
+  shibazhang:{name:'降龙十八掌',sect:'gaibang',lv:28,cost:2500,mp:25,mult:3.8, txt:'飞龙在天！掌影蔽空'},
+  // 华山
+  huashanjian:{name:'华山剑法',sect:'huashan', lv:3,  cost:50,   mp:4,  mult:1.5, txt:'长剑抖出三点寒星'},
+  zixia:   {name:'紫霞神功', sect:'huashan', lv:12, cost:400,  mp:10, mult:2.3, txt:'紫气东来，剑气纵横'},
+  dugu:    {name:'独孤九剑', sect:'huashan', lv:28, cost:2500, mp:24, mult:3.7, txt:'破剑式，无招胜有招'},
+};
+
+const WEAPONS = [
+  {name:'空手',       atk:0,  price:0},
+  {name:'木棍',       atk:4,  price:30},
+  {name:'铁剑',       atk:11, price:180},
+  {name:'雁翎刀',     atk:22, price:700},
+  {name:'精钢长剑',   atk:38, price:2200},
+  {name:'玄铁重剑',   atk:66, price:8000},
+  {name:'倚天古剑',   atk:110,price:30000},
+];
+const ARMORS = [
+  {name:'粗布衣',     def:0,  price:0},
+  {name:'皮甲',       def:3,  price:40},
+  {name:'锁子甲',     def:9,  price:220},
+  {name:'乌金锁甲',   def:18, price:900},
+  {name:'金丝软猬甲', def:32, price:3000},
+  {name:'天蚕宝衣',   def:55, price:12000},
+];
+
+// 场景：exits 出口 / paodian 泡点 / hunt 可猎怪 / shop 商店 / sect 门派
+const MAP = {
+  cunkou:{name:'杏花村·村口', desc:'村口一株老杏树，落英铺了满地。几个孩童追着黄狗跑过，远处炊烟袅袅。',
+    exits:['kezhan','tiejiang','zhulin'],
+    paodian:{act:'替村人挑水劈柴', exp:0.7, lv:1, tip:'虽是杂役，却也练力气'} },
+  kezhan:{name:'杏花村·悦来客栈', desc:'店里飘着酒气和牛肉香。小二肩上搭着白布，正吆喝着上菜。角落里坐着个蒙面的女子。',
+    exits:['cunkou'], shop:'inn',
+    paodian:{act:'在客栈打杂听闲话', exp:1.2, lv:1, tip:'江湖消息，都在酒桌上'} },
+  tiejiang:{name:'杏花村·铁匠铺', desc:'炉火烧得通红，老铁匠光着膀子抡锤，火星子溅了一地。',
+    exits:['cunkou'], shop:'smith' },
+  zhulin:{name:'村外·竹林小径', desc:'竹影森森，风过处沙沙作响。听说林中常有剪径的毛贼出没。',
+    exits:['cunkou','shanlu'], hunt:['pi','lang','zei'],
+    paodian:{act:'竹下盘膝打坐', exp:2.2, lv:5, tip:'心静则气自生'} },
+  shanlu:{name:'后山·瀑布', desc:'一道白练从崖顶垂下，水声轰鸣。崖壁上依稀刻着几行剑痕。',
+    exits:['zhulin','guandao'], hunt:['xiong','zeitou'],
+    paodian:{act:'立于瀑下练功', exp:5, lv:15, tip:'以水磨骨，事半功倍'} },
+  guandao:{name:'洛阳·官道', desc:'黄土大道上车马不绝。道旁茶棚里，几个挎刀的汉子正打量着过路人。',
+    exits:['shanlu','chengnei'], hunt:['mazei','ebar'] },
+  chengnei:{name:'洛阳城·长街', desc:'满城牡丹，人声鼎沸。街口贴着武林大会的告示，围了一圈人。',
+    exits:['guandao','leitai','shanmen','duchang'], shop:'city' },
+  leitai:{name:'洛阳城·比武擂台', desc:'高台三丈，四角挑着红绸。台下人山人海，喝彩声一浪高过一浪。',
+    exits:['chengnei'], arena:true },
+  duchang:{name:'洛阳城·地下赌坊', desc:'烟雾缭绕，骰盅碰得叮当响。庄家眯着眼，笑得像只老狐狸。',
+    exits:['chengnei'], gamble:true },
+  shanmen:{name:'山门前', desc:'青石阶蜿蜒而上，云雾深处隐约可见殿宇飞檐。这里是各大门派收徒之地。',
+    exits:['chengnei','sect'], joinsect:true },
+  sect:{name:'本门·后山', desc:'松风阵阵，同门弟子的吆喝声隐隐传来。师父就在前面的石台上打坐。',
+    exits:['shanmen'], learn:true, gang:true,
+    paodian:{act:'面壁参悟本门心法', exp:11, lv:30, tip:'门派重地，灵气充盈'} },
+};
+
+const MOBS = {
+  pi:    {name:'瘦弱毛贼', lv:1,  hp:40,   atk:6,   def:1,  exp:20,   gold:12},
+  lang:  {name:'饿狼',     lv:4,  hp:90,   atk:14,  def:3,  exp:60,   gold:20},
+  zei:   {name:'剪径山贼', lv:8,  hp:180,  atk:26,  def:8,  exp:150,  gold:60},
+  xiong: {name:'黑瞎子',   lv:14, hp:420,  atk:48,  def:16, exp:400,  gold:150},
+  zeitou:{name:'山贼头目', lv:20, hp:760,  atk:78,  def:28, exp:900,  gold:400},
+  mazei: {name:'马贼',     lv:27, hp:1300, atk:118, def:42, exp:1800, gold:900},
+  ebar:  {name:'恶霸教头', lv:35, hp:2200, atk:175, def:62, exp:3600, gold:2000},
+};
+
+const ARENA = [
+  {name:'铁掌帮众', lv:6,  hp:150,  atk:22,  def:6,  exp:120,  gold:80},
+  {name:'青城弟子', lv:13, hp:380,  atk:46,  def:15, exp:380,  gold:220},
+  {name:'关外刀客', lv:22, hp:900,  atk:92,  def:32, exp:1100, gold:700},
+  {name:'魔教长老', lv:32, hp:2000, atk:160, def:58, exp:3200, gold:2400},
+  {name:'无名剑客', lv:45, hp:4500, atk:280, def:95, exp:9000, gold:7000},
+];
+
+const GANG_FOE = ['青城派弟子','铁掌帮好手','神拳门教头','五毒教弟子','漕帮舵主'];
+
+const EVENTS = [
+  {t:'money', p:25, txt:'脚下踢到个硬物，扒开草丛一看，竟是个钱袋。'},
+  {t:'exp',   p:20, txt:'恍惚间似有所悟，周身经脉一阵温热。'},
+  {t:'hurt',  p:12, txt:'吐纳岔了气，胸口一闷，喉头泛起腥甜。'},
+  {t:'herb',  p:18, txt:'石缝里长着一株通体赤红的草药，你小心采下服了。'},
+  {t:'book',  p:8,  txt:'树洞中掉出一本残破秘籍，你就着日光读了几页。'},
+  {t:'gaoren',p:17,  txt:'一位白须老者飘然而至，看你练功，指点了两句便走了。'},
+];
+
+/* ===================== 存 档 ===================== */
+const KEY = 'paodian_jianghu_v1';
+let P = null;
+
+function newChar(name){
+  return {
+    name:name, lv:1, exp:0, sect:null, gangRank:0, gangPts:0,
+    str:5, root:5, mind:5, agi:5, pot:0,
+    hp:0, mp:0, gold:50, herb:3,
+    weapon:0, armor:0,
+    skills:['pugong'],
+    scene:'cunkou',
+    idle:null,          // {since, acc}
+    total:0, kills:0, born:Date.now(), lastTick:Date.now(),
+  };
+}
+
+/* ===================== 计 算 ===================== */
+const need   = lv => Math.floor(60*Math.pow(lv,1.75)+40*lv);
+const maxHp  = p => 60 + p.root*14 + p.lv*16;
+const maxMp  = p => 30 + p.mind*10 + p.lv*8;
+const atkOf  = p => 6 + p.str*2.2 + p.lv*1.6 + WEAPONS[p.weapon].atk;
+const defOf  = p => 2 + p.root*0.8 + p.lv*0.9 + ARMORS[p.armor].def;
+const dodgeOf= p => Math.min(.35, p.agi*.008);
+const critOf = p => Math.min(.4, .03 + p.agi*.005);
+
+function fmtTime(ms){
+  const s=Math.floor(ms/1000);
+  if(s<60) return s+'秒';
+  if(s<3600) return Math.floor(s/60)+'分'+(s%60)+'秒';
+  return Math.floor(s/3600)+'时'+Math.floor(s%3600/60)+'分';
+}
+const rnd = n => Math.floor(Math.random()*n);
+const pick = a => a[rnd(a.length)];
+
+/* ===================== 输 出 ===================== */
+const logEl = document.getElementById('log');
+function say(html, cls){
+  const d = document.createElement('div');
+  if(cls) d.className = cls;
+  d.innerHTML = html;
+  logEl.appendChild(d);
+  while(logEl.children.length>320) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+const hr = () => say('<span class="d">' + '─'.repeat(30) + '</span>');
+
+/* ===================== 主 对 象 ===================== */
+const G = {
+
+/* ---- 存读档 ---- */
+save(manual){
+  P.lastTick = Date.now();
+  localStorage.setItem(KEY, JSON.stringify(P));
+  if(manual) say('<span class="d">（已存档）</span>');
+},
+load(){
+  try{ const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; }
+  catch(e){ return null; }
+},
+wipe(){
+  if(!confirm('确定要重开人生吗？现有存档将烟消云散。')) return;
+  localStorage.removeItem(KEY); location.reload();
+},
+theme(){
+  const r=document.documentElement;
+  const cur=r.getAttribute('data-theme')==='light'?'dark':'light';
+  r.setAttribute('data-theme',cur);
+  localStorage.setItem(KEY+'_theme',cur);
+},
+
+/* ---- 升级 / 经验 ---- */
+gainExp(n, quiet){
+  n = Math.max(1, Math.floor(n));
+  P.exp += n; P.total += n;
+  if(!quiet) say('　获得经验 <span class="n">'+n+'</span>');
+  let up = 0;
+  while(P.exp >= need(P.lv)){
+    P.exp -= need(P.lv); P.lv++; P.pot += 4; up++;
+    P.hp = maxHp(P); P.mp = maxMp(P);
+  }
+  if(up){
+    say('<span class="g">★ 你的修为更进一层，现已是 '+P.lv+' 级！获得潜能点 '+(up*4)+' 点。</span>');
+    const s = P.sect && SECTS[P.sect];
+    for(const k in SKILLS){
+      const sk = SKILLS[k];
+      if(sk.sect && P.sect===sk.sect && P.lv>=sk.lv && !P.skills.includes(k))
+        say('<span class="d">（'+s.master+'处已可参研《'+sk.name+'》）</span>');
+    }
+  }
+},
+
+/* ---- 泡点 ---- */
+startIdle(){
+  const sc = MAP[P.scene], pd = sc.paodian;
+  if(!pd) return;
+  if(P.lv < pd.lv) return say('<span class="r">此处修行需 '+pd.lv+' 级以上，你火候未到。</span>');
+  P.idle = {since:Date.now(), acc:0}; P.lastTick = Date.now();
+  hr();
+  say('<span class="b">你开始' + pd.act + '……</span>');
+  say('<span class="d">　' + pd.tip + '。挂着别动，经验自会涨。</span>');
+  G.render();
+},
+stopIdle(){
+  if(!P.idle) return;
+  const t = Date.now()-P.idle.since, a = P.idle.acc;
+  P.idle = null;
+  say('<span class="b">你收功起身，共修行 '+fmtTime(t)+'，得经验 <span class="n">'+a+'</span>。</span>');
+  hr(); G.render();
+},
+// 结算一段时间的泡点收益，rate=离线折扣
+settle(ms, rate){
+  const pd = MAP[P.scene].paodian;
+  if(!pd) return 0;
+  const ticks = Math.floor(ms/2000);
+  if(ticks<=0) return 0;
+  const over = Math.max(0, P.lv - pd.lv);
+  const decay = Math.max(.25, 1 - over*0.035);
+  const wu = 1 + P.mind*0.02;
+  let exp = Math.floor(pd.exp * ticks * decay * wu * rate);
+  return exp;
+},
+tick(){
+  if(!P) return;
+  const now = Date.now();
+  if(P.idle){
+    const pd = MAP[P.scene].paodian;
+    const dt = now - P.lastTick;
+    if(dt >= 2000){
+      const got = G.settle(dt, 1);
+      P.idle.acc += got;
+      P.lastTick = now - (dt % 2000);
+      G.gainExp(got, true);
+      P.mp = Math.min(maxMp(P), P.mp + Math.ceil(maxMp(P)*0.02));
+      P.hp = Math.min(maxHp(P), P.hp + Math.ceil(maxHp(P)*0.01));
+      if(Math.random() < 0.035) G.event();
+      G.render();
+    }
+  } else P.lastTick = now;
+},
+event(){
+  let r = rnd(100), acc = 0, e = EVENTS[0];
+  for(const x of EVENTS){ acc += x.p; if(r < acc){ e = x; break; } }
+  say('<span class="p">〖奇遇〗' + e.txt + '</span>');
+  if(e.t==='money'){ const g = 20+rnd(30*P.lv); P.gold += g; say('　得银两 <span class="g">'+g+'</span>'); }
+  if(e.t==='exp'){ G.gainExp(need(P.lv)*0.08); }
+  if(e.t==='hurt'){ const d = Math.ceil(maxHp(P)*0.12); P.hp = Math.max(1,P.hp-d); say('　<span class="r">损失气血 '+d+'</span>'); }
+  if(e.t==='herb'){ P.herb++; say('　得<span class="n">金疮药</span>一枚'); }
+  if(e.t==='book'){ G.gainExp(need(P.lv)*0.3); P.pot += 1; say('　<span class="g">潜能 +1</span>'); }
+  if(e.t==='gaoren'){
+    const k = pick(['str','root','mind','agi']);
+    P[k] += 1;
+    say('　<span class="g">'+({str:'力量',root:'根骨',mind:'悟性',agi:'身法'})[k]+' +1</span>');
+  }
+},
+
+/* ---- 战 斗 ---- */
+battle:null,
+fight(m, tag){
+  if(P.idle) G.stopIdle();
+  if(P.hp < maxHp(P)*0.15) return say('<span class="r">你伤重未愈，此时动手怕是要送命，先打坐疗伤罢。</span>');
+  const foe = {name:m.name, lv:m.lv, hp:m.hp, max:m.hp, atk:m.atk, def:m.def, exp:m.exp, gold:m.gold};
+  G.battle = {foe:foe, tag:tag, round:0};
+  hr();
+  say('<span class="r">〖遭遇〗' + foe.name + '（'+foe.lv+'级）拦住去路，一场恶斗在所难免！</span>');
+  G.render();
+  G.round();
+},
+round(){
+  const B = G.battle; if(!B) return;
+  const f = B.foe; B.round++;
+  if(B.round > 60){ say('<span class="d">缠斗良久，双方各自罢手。</span>'); return G.endFight(null); }
+
+  // 我方出招
+  let sk = SKILLS.pugong;
+  const usable = P.skills.map(k=>SKILLS[k]).filter(s=>s.mp<=P.mp);
+  if(usable.length) sk = usable.reduce((a,b)=> b.mult>a.mult ? b : a);
+  P.mp -= sk.mp;
+  let dmg = Math.max(1, Math.floor((atkOf(P)*sk.mult - f.def) * (0.85+Math.random()*0.3)));
+  let crit = Math.random() < critOf(P);
+  if(crit) dmg = Math.floor(dmg*1.8);
+  f.hp -= dmg;
+  say('　你' + sk.txt + '，' + (crit?'<span class="g">正中要害！</span>':'') +
+      '击中' + f.name + '，伤 <span class="r">'+dmg+'</span>');
+  if(f.hp <= 0){ return G.endFight(true); }
+
+  // 敌方还手
+  if(Math.random() < dodgeOf(P)){
+    say('　<span class="b">' + f.name + '一击落空，被你侧身让过。</span>');
+  }else{
+    let d2 = Math.max(1, Math.floor((f.atk - defOf(P)) * (0.85+Math.random()*0.3)));
+    P.hp -= d2;
+    say('　<span class="d">' + f.name + '反手一击，你受创 <span class="r">'+d2+'</span></span>');
+    if(P.hp <= 0){ P.hp = 0; return G.endFight(false); }
+  }
+  G.render();
+  setTimeout(G.round, 620);
+},
+endFight(win){
+  const B = G.battle, f = B.foe; G.battle = null;
+  if(win === true){
+    P.kills++;
+    const g = Math.floor(f.gold*(0.7+Math.random()*0.6));
+    P.gold += g;
+    say('<span class="g">★ ' + f.name + '倒地不起，你赢了！</span>');
+    say('　搜得银两 <span class="g">'+g+'</span>');
+    G.gainExp(f.exp);
+    if(B.tag==='gang'){ const pts = 5+rnd(10); P.gangPts += pts; say('　帮贡 <span class="p">+'+pts+'</span>'); }
+    if(Math.random()<0.15){ P.herb++; say('　拾得<span class="n">金疮药</span>一枚'); }
+  }else if(win === false){
+    const lose = Math.floor(P.gold*0.1);
+    P.gold -= lose; P.hp = 1;
+    say('<span class="r">☠ 你眼前一黑倒了下去……醒来时已被村人抬回客栈，丢了 '+lose+' 两银子。</span>');
+    P.scene = 'kezhan';
+  }
+  hr(); G.save(); G.render();
+},
+hunt(){
+  const sc = MAP[P.scene];
+  const m = MOBS[pick(sc.hunt)];
+  G.fight(m);
+},
+arena(){
+  const list = ARENA.filter(a=>a.lv <= P.lv+12);
+  if(!list.length) return say('<span class="d">台上高手如云，你还是先练几年再来。</span>');
+  G.fight(list[list.length-1], 'arena');
+},
+
+/* ---- 疗伤 / 用药 ---- */
+rest(){
+  if(P.idle) G.stopIdle();
+  const h = Math.ceil(maxHp(P)*0.25), m = Math.ceil(maxMp(P)*0.3);
+  P.hp = Math.min(maxHp(P), P.hp+h);
+  P.mp = Math.min(maxMp(P), P.mp+m);
+  say('<span class="b">你盘膝而坐，运气周天，气血 +'+h+'，内力 +'+m+'。</span>');
+  G.render();
+},
+useHerb(){
+  if(P.herb<=0) return say('<span class="d">身上已无金疮药了。</span>');
+  P.herb--;
+  const h = Math.ceil(maxHp(P)*0.5);
+  P.hp = Math.min(maxHp(P), P.hp+h);
+  say('<span class="n">你服下金疮药，气血 +'+h+'。</span>');
+  G.render();
+},
+
+/* ---- 门派 ---- */
+joinSect(){
+  if(P.sect) return say('<span class="d">你已是'+SECTS[P.sect].name+'门下，岂能改换门庭。</span>');
+  if(P.lv < 3) return say('<span class="r">各派掌门看你根基太浅，让你先历练到 3 级再来。</span>');
+  let s = '<div class="grp"><b>拜入：</b>';
+  for(const k in SECTS) s += '<a class="cmd" onclick="G.doJoin(\''+k+'\')">'+SECTS[k].name+'</a>';
+  s += '</div><div class="d">';
+  for(const k in SECTS) s += SECTS[k].name+'　'+SECTS[k].desc+'\n';
+  say(s+'</div>');
+},
+doJoin(k){
+  if(P.sect) return;
+  P.sect = k; const S = SECTS[k];
+  for(const a in S.bonus) P[a] += S.bonus[a];
+  P.hp = maxHp(P); P.mp = maxMp(P);
+  hr();
+  say('<span class="g">★ 你三跪九叩，正式拜入'+S.name+'，'+S.master+'收你为徒。</span>');
+  say('<span class="d">　自此可上本门后山修行、参研本门武学。</span>');
+  G.save(); G.render();
+},
+learn(){
+  if(!P.sect) return say('<span class="r">你尚未拜师，无门无派。</span>');
+  const S = SECTS[P.sect];
+  const list = Object.keys(SKILLS).filter(k=>SKILLS[k].sect===P.sect && !P.skills.includes(k));
+  if(!list.length) return say('<span class="d">'+S.master+'捋须道：本门武学，你已尽数学去了。</span>');
+  let s = '<div class="grp"><b>'+S.master+'：</b></div>';
+  for(const k of list){
+    const sk = SKILLS[k];
+    const ok = P.lv>=sk.lv && P.gold>=sk.cost;
+    s += '<div>' + (ok ? '<a class="cmd" onclick="G.doLearn(\''+k+'\')">《'+sk.name+'》</a>'
+                       : '<span class="d">《'+sk.name+'》</span>') +
+         '<span class="d"> 需 '+sk.lv+'级 · 束脩 '+sk.cost+'两 · 耗内力'+sk.mp+' · 威力×'+sk.mult+'</span></div>';
+  }
+  say(s);
+},
+doLearn(k){
+  const sk = SKILLS[k];
+  if(P.skills.includes(k)) return;
+  if(P.lv<sk.lv) return say('<span class="r">火候未到。</span>');
+  if(P.gold<sk.cost) return say('<span class="r">银两不足。</span>');
+  P.gold -= sk.cost; P.skills.push(k);
+  say('<span class="g">★ 你静心参研数日，终于练成《'+sk.name+'》！</span>');
+  G.save(); G.render();
+},
+gangFight(){
+  if(!P.sect) return say('<span class="r">你无门无派，何来械斗。</span>');
+  const lv = Math.max(1, P.lv + rnd(7) - 2);
+  G.fight({name:pick(GANG_FOE), lv:lv, hp:Math.floor(80+lv*lv*4.6), atk:Math.floor(10+lv*5.8),
+           def:Math.floor(2+lv*2.3), exp:Math.floor(40+lv*lv*2.4), gold:Math.floor(20+lv*14)}, 'gang');
+},
+exchange(){
+  const cost = 60;
+  if(P.gangPts < cost) return say('<span class="d">帮贡不足（需 '+cost+'），多打几场械斗罢。</span>');
+  P.gangPts -= cost; P.pot += 3;
+  say('<span class="p">你以 '+cost+' 帮贡换得门派赏赐，潜能 +3。</span>');
+  G.render();
+},
+
+/* ---- 商 店 ---- */
+shop(kind){
+  if(kind==='inn'){
+    let s='<div class="grp"><b>店小二：</b>客官吃点什么？</div>';
+    s+='<div><a class="cmd" onclick="G.buyFood()">叫一坛女儿红（20两，回满气血内力）</a></div>';
+    s+='<div><a class="cmd" onclick="G.buyHerb()">买金疮药（30两/枚）</a></div>';
+    return say(s);
+  }
+  const isSmith = kind==='smith';
+  let s='<div class="grp"><b>'+(isSmith?'老铁匠：':'店家：')+'</b>看看趁手的家伙？</div>';
+  WEAPONS.forEach((w,i)=>{
+    if(i===0||w.price===0) return;
+    if(isSmith && w.price>1000) return;          // 好兵器要进城买
+    if(!isSmith && w.price<=180) return;
+    const own=P.weapon===i, can=P.gold>=w.price && !own;
+    s+='<div>'+(can?'<a class="cmd" onclick="G.buyW('+i+')">'+w.name+'</a>':'<span class="d">'+w.name+'</span>')+
+       '<span class="d"> 攻击+'+w.atk+' · '+w.price+'两'+(own?' · <span class="g">已持</span>':'')+'</span></div>';
+  });
+  ARMORS.forEach((a,i)=>{
+    if(i===0||a.price===0) return;
+    if(isSmith && a.price>1000) return;
+    if(!isSmith && a.price<=220) return;
+    const own=P.armor===i, can=P.gold>=a.price && !own;
+    s+='<div>'+(can?'<a class="cmd" onclick="G.buyA('+i+')">'+a.name+'</a>':'<span class="d">'+a.name+'</span>')+
+       '<span class="d"> 防御+'+a.def+' · '+a.price+'两'+(own?' · <span class="g">已穿</span>':'')+'</span></div>';
+  });
+  say(s);
+},
+buyW(i){ const w=WEAPONS[i]; if(P.gold<w.price)return; P.gold-=w.price; P.weapon=i;
+  say('<span class="g">你买下'+w.name+'，掂了掂，甚是趁手。</span>'); G.save(); G.render(); },
+buyA(i){ const a=ARMORS[i]; if(P.gold<a.price)return; P.gold-=a.price; P.armor=i;
+  say('<span class="g">你换上'+a.name+'。</span>'); G.save(); G.render(); },
+buyFood(){ if(P.gold<20) return say('<span class="r">囊中羞涩。</span>');
+  P.gold-=20; P.hp=maxHp(P); P.mp=maxMp(P);
+  say('<span class="n">酒足饭饱，气血内力尽复。</span>'); G.render(); },
+buyHerb(){ if(P.gold<30) return say('<span class="r">囊中羞涩。</span>');
+  P.gold-=30; P.herb++; say('<span class="n">买得金疮药一枚。</span>'); G.render(); },
+
+gamble(){
+  const bet = Math.min(P.gold, Math.max(20, Math.floor(P.gold*0.2)));
+  if(P.gold < 20) return say('<span class="d">庄家瞥了你一眼：穷鬼，边儿去。</span>');
+  const a=1+rnd(6), b=1+rnd(6), c=1+rnd(6), sum=a+b+c;
+  const big = sum>=11;
+  const me = Math.random()<0.5;
+  say('<span class="d">你押了 '+bet+' 两在「'+(me?'大':'小')+'」上。骰盅开——'+a+' '+b+' '+c+' ＝ '+sum+'，'+(big?'大':'小')+'！</span>');
+  if(me===big){ P.gold+=bet; say('<span class="g">赢了 '+bet+' 两！</span>'); }
+  else{ P.gold-=bet; say('<span class="r">输了 '+bet+' 两。</span>'); }
+  G.render();
+},
+
+/* ---- 加 点 ---- */
+addPot(k){
+  if(P.pot<=0) return;
+  P.pot--; P[k]++;
+  if(k==='root') P.hp=Math.min(maxHp(P),P.hp+14);
+  if(k==='mind') P.mp=Math.min(maxMp(P),P.mp+10);
+  G.render();
+},
+
+/* ---- 移 动 ---- */
+go(k){
+  if(G.battle) return;
+  if(P.idle) G.stopIdle();
+  if(k==='sect' && !P.sect) return say('<span class="r">你无门无派，山门弟子不放你进去。</span>');
+  P.scene = k;
+  hr();
+  say('<span class="b">你来到' + MAP[k].name + '。</span>');
+  say('<span class="d">' + MAP[k].desc + '</span>');
+  G.save(); G.render();
+},
+
+/* ---- 渲 染 ---- */
+render(){
+  const bar=(cur,max,color)=>{
+    const w=Math.max(0,Math.min(100, cur/max*100));
+    return '<div class="bar"><i style="width:'+w+'%;background:'+color+'"></i></div>';
+  };
+  const S = P.sect?SECTS[P.sect].name:'无门无派';
+  let h = '';
+  h += '<div class="row"><span class="g">'+P.name+'</span><span class="d">'+S+'</span></div>';
+  h += '<div class="row"><span class="k">等级</span><span>'+P.lv+'</span></div>';
+  h += '<div class="row"><span class="k">气血</span><span>'+Math.floor(P.hp)+' / '+maxHp(P)+'</span></div>'+bar(P.hp,maxHp(P),'var(--red)');
+  h += '<div class="row"><span class="k">内力</span><span>'+Math.floor(P.mp)+' / '+maxMp(P)+'</span></div>'+bar(P.mp,maxMp(P),'var(--blue)');
+  h += '<div class="row"><span class="k">经验</span><span>'+P.exp+' / '+need(P.lv)+'</span></div>'+bar(P.exp,need(P.lv),'var(--green)');
+  h += '<div class="row"><span class="k">力量 / 根骨</span><span>'+P.str+' / '+P.root+'</span></div>';
+  h += '<div class="row"><span class="k">悟性 / 身法</span><span>'+P.mind+' / '+P.agi+'</span></div>';
+  h += '<div class="row"><span class="k">攻击 / 防御</span><span>'+Math.floor(atkOf(P))+' / '+Math.floor(defOf(P))+'</span></div>';
+  h += '<div class="row"><span class="k">银两</span><span class="g">'+P.gold+'</span></div>';
+  h += '<div class="row"><span class="k">金疮药</span><span>'+P.herb+'</span></div>';
+  if(P.sect) h += '<div class="row"><span class="k">帮贡</span><span class="p">'+P.gangPts+'</span></div>';
+  h += '<div class="row d" style="font-size:12px"><span>'+WEAPONS[P.weapon].name+'</span><span>'+ARMORS[P.armor].name+'</span></div>';
+  if(P.pot>0){
+    h += '<div class="grp" style="border-top:1px dashed var(--line);padding-top:5px">';
+    h += '<b>潜能 '+P.pot+'：</b><br>';
+    h += '<a class="cmd" onclick="G.addPot(\'str\')">+力量</a><a class="cmd" onclick="G.addPot(\'root\')">+根骨</a>';
+    h += '<a class="cmd" onclick="G.addPot(\'mind\')">+悟性</a><a class="cmd" onclick="G.addPot(\'agi\')">+身法</a></div>';
+  }
+  if(P.skills.length>1){
+    h += '<div class="d" style="font-size:12px;border-top:1px dashed var(--line);padding-top:5px">武学：'+
+         P.skills.map(k=>SKILLS[k].name).join('、')+'</div>';
+  }
+  document.getElementById('statBody').innerHTML = h;
+
+  const sc = MAP[P.scene];
+  document.getElementById('sceneName').textContent = '[ ' + sc.name + ' ]';
+  document.getElementById('sceneDesc').textContent = sc.desc;
+
+  let a = '';
+  if(G.battle){
+    const f = G.battle.foe;
+    a += '<div class="grp"><b>战况：</b><span class="r">'+f.name+'</span> 气血 '+Math.max(0,f.hp)+' / '+f.max+'</div>';
+    a += '<div class="d">刀光剑影，无暇他顾……</div>';
+    document.getElementById('acts').innerHTML = a;
+    return;
+  }
+  if(sc.paodian){
+    a += '<div class="grp"><b>修行：</b>';
+    if(P.idle){
+      a += '<a class="cmd r" onclick="G.stopIdle()">◆ 收功（已泡 '+fmtTime(Date.now()-P.idle.since)+'，得 '+P.idle.acc+' 经验）</a>';
+    }else{
+      const ok = P.lv>=sc.paodian.lv;
+      a += ok ? '<a class="cmd" onclick="G.startIdle()">'+sc.paodian.act+'</a>'
+              : '<span class="cmd off">'+sc.paodian.act+'（需'+sc.paodian.lv+'级）</span>';
+    }
+    a += '</div>';
+  }
+  let acts = '';
+  if(sc.hunt)     acts += '<a class="cmd" onclick="G.hunt()">寻敌较量</a>';
+  if(sc.arena)    acts += '<a class="cmd" onclick="G.arena()">登台挑战</a>';
+  if(sc.gamble)   acts += '<a class="cmd" onclick="G.gamble()">押一把大小</a>';
+  if(sc.shop)     acts += '<a class="cmd" onclick="G.shop(\''+sc.shop+'\')">看看货色</a>';
+  if(sc.joinsect) acts += '<a class="cmd" onclick="G.joinSect()">拜师入门</a>';
+  if(sc.learn)    acts += '<a class="cmd" onclick="G.learn()">求师授艺</a>';
+  if(sc.gang){    acts += '<a class="cmd" onclick="G.gangFight()">下山械斗</a>';
+                  acts += '<a class="cmd" onclick="G.exchange()">帮贡换赏</a>'; }
+  acts += '<a class="cmd" onclick="G.rest()">打坐疗伤</a>';
+  if(P.herb>0)    acts += '<a class="cmd" onclick="G.useHerb()">服金疮药</a>';
+  a += '<div class="grp"><b>行动：</b>'+acts+'</div>';
+
+  a += '<div class="grp"><b>去往：</b>' +
+       sc.exits.map(k=>'<a class="cmd" onclick="G.go(\''+k+'\')">'+MAP[k].name+'</a>').join('') + '</div>';
+  document.getElementById('acts').innerHTML = a;
+},
+
+/* ---- 开 局 ---- */
+boot(){
+  const th = localStorage.getItem(KEY+'_theme');
+  if(th) document.documentElement.setAttribute('data-theme',th);
+
+  P = G.load();
+  if(!P){
+    document.getElementById('acts').innerHTML =
+      '<div class="grp"><b>敢问阁下高姓大名：</b>' +
+      '<input id="nm" maxlength="8" placeholder="侠名" style="width:120px"> ' +
+      '<a class="cmd" onclick="G.create()">投身江湖</a></div>';
+    document.getElementById('sceneName').textContent = '[ 楔子 ]';
+    document.getElementById('sceneDesc').textContent =
+      '大雪封山那年，你背着半袋干粮下了山，身无长物，只有一身使不完的力气。';
+    say('<span class="d">江湖路远，从村口那株老杏树开始。</span>');
+    document.getElementById('nm').addEventListener('keydown',e=>{ if(e.key==='Enter') G.create(); });
+    return;
+  }
+  // 离线结算
+  const off = Date.now() - (P.lastTick||Date.now());
+  say('<span class="d">〖'+P.name+'，'+P.lv+'级，'+(P.sect?SECTS[P.sect].name:'无门无派')+'〗</span>');
+  if(P.idle && off > 60000){
+    const cap = Math.min(off, 8*3600*1000);
+    const got = G.settle(cap, 0.6);
+    P.idle.acc += got;
+    say('<span class="b">你离开的这 '+fmtTime(off)+' 里一直在'+MAP[P.scene].paodian.act+
+        (off>cap?'（只算前八个时辰）':'')+'。</span>');
+    G.gainExp(got);
+    P.hp = Math.min(maxHp(P), P.hp + maxHp(P)*0.5);
+    P.mp = maxMp(P);
+  }
+  P.lastTick = Date.now();
+  G.go(P.scene);
+},
+create(){
+  const v = (document.getElementById('nm').value||'').trim();
+  if(!v) return say('<span class="r">总得有个名号罢。</span>');
+  P = newChar(v);
+  P.hp = maxHp(P); P.mp = maxMp(P);
+  hr();
+  say('<span class="g">★ '+v+'，你的江湖，从今日始。</span>');
+  say('<span class="d">先在村里挑水劈柴攒些经验，练到 3 级便可去洛阳城外的山门拜师。</span>');
+  G.save(); G.go('cunkou');
+},
+};
+
+G.boot();
+setInterval(()=>{ G.tick(); }, 500);
+setInterval(()=>{ if(P) G.save(); }, 20000);
+setInterval(()=>{ if(P && P.idle && !G.battle) G.render(); }, 1000);
+window.addEventListener('beforeunload', ()=>{ if(P) G.save(); });
+</script>
