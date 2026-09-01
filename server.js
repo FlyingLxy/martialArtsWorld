@@ -8,7 +8,7 @@ const D = require('./game-data.js');
 const {SECTS,SKILLS,WEAPONS,ARMORS,MAP,MOBS,ARENA,GANG_FOE,EVENTS,ACTS,PRICE,MATS,DROP,F,titleOf,plus} = D;
 
 const PORT = process.env.PORT || 8080;
-const DATA = path.join(__dirname, 'data.json');
+const DATA = process.env.DATA_FILE || path.join(__dirname, 'data.json');   // 测试时指到别处
 const PUB  = path.join(__dirname, 'public');
 
 /* ============ 世 界 ============ */
@@ -1315,6 +1315,7 @@ process.on('uncaughtException', e => {
   process.exit(1);
 });
 server.listen(PORT, ()=>{
+  if(process.env.QUIET){ console.log('ready'); return; }        // 测试时别刷屏
   const nets = require('node:os').networkInterfaces();
   const lan = Object.values(nets).flat()
     .filter(n => n && n.family === 'IPv4' && !n.internal).map(n => n.address);
