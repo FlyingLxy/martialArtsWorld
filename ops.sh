@@ -40,7 +40,20 @@ case "${1:-status}" in
     ;;
   log)      $DC logs -f --tail=100 "${2:-game}" ;;
   restart)  $DC restart game && echo "游戏重启了（数据库没动）" ;;
-  update)   git pull && $DC build game && $DC up -d game && echo "更新完毕" ;;
+  update)
+    BEFORE=$(git rev-parse --short HEAD)
+    git pull -q || { echo "拉代码失败"; exit 1; }
+    AFTER=$(git rev-parse --short HEAD)
+    if [ "$BEFORE" = "$AFTER" ]; then echo "已经是最新的（$AFTER）"; exit 0; fi
+    # 依赖变了才需要重新构建镜像，否则源码是挂载进去的，重启就行
+    if git diff --name-only $BEFORE $AFTER | grep -qE '^(package|Dockerfile)'; then
+      echo "依赖或镜像有变动，重新构建…"; $DC build game && $DC up -d game
+    else
+      $DC restart game
+    fi
+    echo "$BEFORE → $AFTER  更新完毕"
+    git log --oneline $BEFORE..$AFTER | sed 's/^/  /'
+    ;;
   backup)   ./backup.sh --verify ;;
   stop)     $DC down && echo "全停了（数据还在，volume 没删）" ;;
   start)    $DC up -d && echo "起来了" ;;

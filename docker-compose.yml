@@ -51,6 +51,12 @@ services:
     volumes:
       # 头一回启动时，把老的 data.json 放这儿会自动迁进 MySQL
       - ./game-data-vol:/data
+      # 源码直接挂进去：改完 git pull + restart 就生效，不用重新 build 镜像
+      # （依赖还在镜像里，只有加了新依赖才需要重新 build）
+      - ./server.js:/app/server.js:ro
+      - ./store.js:/app/store.js:ro
+      - ./game-data.js:/app/game-data.js:ro
+      - ./public:/app/public:ro
     expose:
       - "8080"                          # 只对 nginx 开放，不直接暴露到公网
     stop_grace_period: 20s              # 留够时间让它存档退出
