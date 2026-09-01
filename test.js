@@ -106,7 +106,8 @@ function boot(){
     srv = spawn(process.execPath, ['server.js'], {
       cwd: __dirname,
       env: {...process.env, PORT:String(PORT), DATA_FILE:SAVE, QUIET:'1',
-            ...DBENV, ...(process.env.RL_ON ? {} : {NO_RATELIMIT:'1'})},
+            ...DBENV, ...(process.env.RL_ON ? {} : {NO_RATELIMIT:'1'}),
+            ...(process.env.INV_ON ? {INVITE_CODE:'testcode'} : {})},
     });
     let out = '';
     srv.stdout.on('data', d => { out += d; if(out.includes('ready')) res(); });
@@ -354,7 +355,32 @@ async function run(){
   }
 
   if(!USE_MYSQL){
-    G('⑧ 限流：公网上必须有这层');
+    G('⑧ 邀请码与暗号加盐');
+  {
+    await down();
+    process.env.INV_ON = '1';
+    await boot();
+    const noCode = await post('/api/login', {name:'路人甲', pass:'x', create:1});
+    ok(noCode.err && noCode.needInvite, '没带邀请码，建不了新号');
+    const wrong = await post('/api/login', {name:'路人甲', pass:'x', create:1, invite:'瞎猜的'});
+    ok(!!wrong.err, '邀请码不对也不行');
+    const right = await post('/api/login', {name:'路人甲', pass:'x', create:1, invite:'testcode'});
+    ok(!!right.token, '码对了才建得成');
+
+    // 老号（存档里是无盐的老格式）应当照常登录，并被就地升级成加盐
+    const old = await post('/api/login', {name:'老手', pass:'x'});
+    ok(!!old.token, '老账号不受邀请码影响，照常登录');
+    await wait(2600);                        // 等一次存档落盘
+    const saved = readSave();
+    const rec = saved.players ? saved.players['老手'] : null;
+    ok(rec && rec.salt && rec.salt.length === 32, '老账号的暗号已就地加盐（salt 长度 ' + (rec && rec.salt || '').length + '）');
+    ok(rec && rec.pass !== require('node:crypto').createHash('sha256').update('paodian:x').digest('hex'),
+       '存的不再是无盐 sha256 了');
+    delete process.env.INV_ON;
+    await down(); await boot();
+  }
+
+  G('⑨ 限流：公网上必须有这层');
   {
     // 单独起一个开着限流的服务器来验
     await down();
@@ -388,7 +414,32 @@ async function run(){
     ok(h.me.lv === 40, '主存档坏掉后，从备份把角色救了回来', h.me.lv);
     h.close();
   } else {
-    G('⑧ 限流：公网上必须有这层');
+    G('⑧ 邀请码与暗号加盐');
+  {
+    await down();
+    process.env.INV_ON = '1';
+    await boot();
+    const noCode = await post('/api/login', {name:'路人甲', pass:'x', create:1});
+    ok(noCode.err && noCode.needInvite, '没带邀请码，建不了新号');
+    const wrong = await post('/api/login', {name:'路人甲', pass:'x', create:1, invite:'瞎猜的'});
+    ok(!!wrong.err, '邀请码不对也不行');
+    const right = await post('/api/login', {name:'路人甲', pass:'x', create:1, invite:'testcode'});
+    ok(!!right.token, '码对了才建得成');
+
+    // 老号（存档里是无盐的老格式）应当照常登录，并被就地升级成加盐
+    const old = await post('/api/login', {name:'老手', pass:'x'});
+    ok(!!old.token, '老账号不受邀请码影响，照常登录');
+    await wait(2600);                        // 等一次存档落盘
+    const saved = readSave();
+    const rec = saved.players ? saved.players['老手'] : null;
+    ok(rec && rec.salt && rec.salt.length === 32, '老账号的暗号已就地加盐（salt 长度 ' + (rec && rec.salt || '').length + '）');
+    ok(rec && rec.pass !== require('node:crypto').createHash('sha256').update('paodian:x').digest('hex'),
+       '存的不再是无盐 sha256 了');
+    delete process.env.INV_ON;
+    await down(); await boot();
+  }
+
+  G('⑨ 限流：公网上必须有这层');
   {
     // 单独起一个开着限流的服务器来验
     await down();

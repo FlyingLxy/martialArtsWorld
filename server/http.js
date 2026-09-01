@@ -9,7 +9,7 @@ const D = require('../gamedata');
 const {SECTS,SKILLS,WEAPONS,ARMORS,MAP,MOBS,ARENA,GANG_FOE,EVENTS,ACTS,PRICE,MATS,DROP,F,titleOf,plus} = D;
 const store = require('../store.js');
 const {PORT, DATA, PUB, ROOT} = require('./config.js');
-const {world, newPlayer, save, load, push, log, roomLog, chat, notice, hash} = require('./core.js');
+const {world, newPlayer, save, load, push, log, roomLog, chat, notice, hash, newSalt, checkPass} = require('./core.js');
 const {sync, syncRoom} = require('./state.js');
 const {CMD} = require('./commands.js');
 const {autoIdle, stopIdle} = require('./idle.js');
@@ -35,6 +35,7 @@ function clientIp(req){
   if(xff) return String(xff).split(',')[0].trim();
   return (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 }
+const INVITE = (process.env.INVITE_CODE || '').trim();   // 空着就是不限制
 const LIMITS = {
   login: {max: 10,  win: 60000},                  // 每分钟 10 次登录/注册
   cmd  : {max: 240, win: 60000},                  // 每分钟 240 条指令，正常玩远达不到
@@ -63,12 +64,18 @@ const server = http.createServer(async (req, res)=>{
     if(!name || !pass) return json(res,{err:'名号和暗号都不能空着。'});
     if(/[<>&"'\s]/.test(name)) return json(res,{err:'名号里不能有空格和奇怪符号。'});
     let p = world.players.get(name);
-    if(p){ if(p.pass !== hash(pass)) return json(res,{err:'暗号不对。'}); }
+    if(p){ if(!checkPass(p, pass)) return json(res,{err:'暗号不对。'}); }
+    else if(INVITE && String(b.invite||'').trim() !== INVITE){
+      // 熟人局：新号得有邀请码，老号照常登录不受影响
+      return json(res, {err:'邀请码不对。这是个熟人局，问问拉你来的人。', needInvite:true});
+    }
     else if(!b.create){
       // 名号打错一个字就闷声建个新号，会让人以为存档丢了——先问一句
       return json(res, {isNew:true, name});
     }
-    else { p = newPlayer(name, pass); p.hp=F.maxHp(p); p.mp=F.maxMp(p); world.players.set(name,p);
+    else { p = newPlayer(name, pass);
+           p.salt = newSalt(); p.pass = hash(pass, p.salt);
+           p.hp=F.maxHp(p); p.mp=F.maxMp(p); world.players.set(name,p);
            notice('<b>'+name+'</b> 初入江湖，落脚在杏花村。'); save(); }
     const token = crypto.randomBytes(16).toString('hex');
     world.tokens.set(token, name);

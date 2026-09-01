@@ -49,7 +49,9 @@ setInterval(()=>{
   const now = Date.now();
   for(const p of online()){
     if(!p.idle || p.battle) continue;
-    const dt = now - p.idle.last;
+    // 一次最多补 5 跳。机器卡顿、GC 停顿、磁盘阻塞都会让这个循环迟到，
+    // 不封顶的话恢复那一刻会把攒下的几分钟一次性折成经验，白送一大截。
+    const dt = Math.min(now - p.idle.last, 10000);
     if(dt < 2000) continue;
     p.idle.last = now - (dt % 2000);
     const wife = p.spouse && world.players.get(p.spouse);

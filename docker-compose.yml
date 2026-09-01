@@ -47,6 +47,7 @@ services:
       DB_USER: paodian
       DB_PASS: ${MYSQL_PASSWORD}
       DB_NAME: paodian
+      INVITE_CODE: ${INVITE_CODE:-}
       TZ: Asia/Shanghai
     volumes:
       # 头一回启动时，把老的 data.json 放这儿会自动迁进 MySQL

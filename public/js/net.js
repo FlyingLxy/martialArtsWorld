@@ -17,14 +17,19 @@ async function post(url, o){
 async function login(){
   const name = $('ln').value.trim(), pass = $('lp').value;
   if(!name || !pass){ $('err').textContent = '名号和暗号都得填。'; return; }
-  let r = await post('/api/login', {name, pass});
+  const invite = ($('li') || {}).value || '';
+  let r = await post('/api/login', {name, pass, invite});
   if(r.isNew){
     $('err').textContent = '';
     if(!confirm('江湖上还没有「'+name+'」这个名号。\n\n要新建一个角色吗？\n（如果你是老玩家，八成是名字打错了一个字——取消再核对一下）'))
       { $('err').textContent = '那就再核对一下名号。'; return; }
-    r = await post('/api/login', {name, pass, create:1});
+    r = await post('/api/login', {name, pass, create:1, invite});
   }
-  if(r.err){ $('err').textContent = r.err; return; }
+  if(r.err){
+    $('err').textContent = r.err;
+    if(r.needInvite && $('li')) $('li').focus();
+    return;
+  }
   TOK = r.token;
   localStorage.setItem('pd_tok',TOK); localStorage.setItem('pd_n',name); localStorage.setItem('pd_p',pass);
   enter();

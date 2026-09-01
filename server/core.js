@@ -22,11 +22,21 @@ const world = {
 const rnd  = n => Math.floor(Math.random()*n);
 const pick = a => a[rnd(a.length)];
 const esc  = s => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
-const hash = (s) => crypto.createHash('sha256').update('paodian:'+s).digest('hex');
+const hashOld = (s) => crypto.createHash('sha256').update('paodian:'+s).digest('hex');   // 老账号用的，无盐
+const hash = (s, salt) => crypto.createHash('sha256').update('paodian:'+salt+':'+s).digest('hex');
+const newSalt = () => crypto.randomBytes(16).toString('hex');
+
+/* 校验暗号。老账号是无盐的，验过之后顺手升级成加盐的，玩家无感。 */
+function checkPass(p, pass){
+  if(p.salt) return p.pass === hash(pass, p.salt);
+  if(p.pass !== hashOld(pass)) return false;
+  p.salt = newSalt(); p.pass = hash(pass, p.salt);          // 就地升级
+  return true;
+}
 
 function newPlayer(name, pass){
   return {
-    name, pass:hash(pass), lv:1, exp:0, sect:null, gangPts:0,
+    name, salt:'', pass:'', lv:1, exp:0, sect:null, gangPts:0,
     str:5, root:5, mind:5, agi:5, pot:0,
     hp:216, mp:88, gold:50, herb:3, weapon:0, armor:0,
     skills:['pugong'], scene:'cunkou',
@@ -101,4 +111,6 @@ function chat(from, ch, text, to){
 function notice(html){ const m={t:'chat', id:++world.seq, scope:'pub', ch:'sys', text:html, ts:Date.now()};
   world.chat.push(m); if(world.chat.length>60) world.chat.shift(); toAll(m); }
 
-module.exports = { world, newPlayer, RUNTIME, save, load, push, online, inRoom, toRoom, toAll, toSect, log, roomLog, chat, notice, esc, hash, rnd, pick };
+module.exports = { world, newPlayer, checkPass, hashOld, hash, newSalt, RUNTIME, save, load,
+                   push, online, inRoom, toRoom, toAll, toSect, log, roomLog, chat, notice,
+                   esc, rnd, pick };
