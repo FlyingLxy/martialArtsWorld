@@ -86,6 +86,33 @@ http://你的机器名.local:8080          ← 主机名，不会变
 关服、崩溃前会立即落盘。**第一次用 MySQL 启动时，如果发现 `data.json` 会自动整个迁进去**，
 迁完把原文件改名成 `data.json.migrated`。
 
+## 备份
+
+自建数据库唯一必须认真做的事。`backup.sh` 两种存储都认，自动判断：
+
+```bash
+./backup.sh              # 备份一次
+./backup.sh --verify     # 备份并验证这份读得回来
+```
+
+文件模式压 `data.json`，MySQL 模式走 `mysqldump --single-transaction`（**不锁表，玩家照常玩**）。
+默认存到 `./backups/`，保留最近 30 份，旧的自动清掉。
+
+挂进 crontab，每天凌晨四点来一次：
+
+```
+0 4 * * * cd /srv/martialArtsWorld && ./backup.sh --verify >> backups/cron.log 2>&1
+```
+
+**异地备份**：配上 `TOS_BUCKET`（先 `ve configure` 好），会顺手传一份到对象存储——
+几 MB 的东西一年花不了几块钱，但机器整个没了的时候，这是你唯一的救命稻草。
+
+**恢复演练要真做一遍**，别等出事才第一次用：
+
+```bash
+gunzip -c backups/paodian-xxx.sql.gz | mysql -h $DB_HOST -u $DB_USER -p $DB_NAME
+```
+
 ## 用 Docker 部署
 
 ```bash
@@ -282,6 +309,24 @@ forge: 每级 +12% 属性，费用 (原价*0.6+200)*(n+1)，成功率 95%-9%n，
 四个属性各管一摊：**力量**→攻击；**根骨**→气血和防御；**悟性**→内力和**泡点速度**（唯一影响升级快慢的）；
 **身法**→闪避、暴击、切磋先手。
 
+## 数据库怎么选
+
+**别买云上的托管 RDS**，除非你真的到了几万玩家。算一笔账：
+
+| 注册玩家 | 实际占用（含索引和 binlog） |
+|---|---|
+| 100 人 | 0.5 MB |
+| 1000 人 | 5 MB |
+| 1 万人 | 52 MB |
+| 10 万人 | 524 MB |
+
+而 RDS 起步就是 100 GB、一年上千块——**攒到十万个玩家也才用掉 0.51%**，其余全是买给空气的。
+你反正要买一台 ECS 跑别的东西，MySQL 装进去无非多吃 1G 内存，边际成本近乎为零。
+省下的钱加到机器配置上更实在。
+
+托管数据库真正值钱的是自动备份、按时间点恢复、主备秒切——这些对一个 MB 级的小游戏都用不上，
+自己 `backup.sh` 挂个 cron 就够了。等哪天真有几万人在玩，再迁过去也就是改 `DB_HOST`。
+
 ## 跑测试
 
 改完记得跑一遍，**尤其是动了数值或者钱货相关的地方**：
@@ -289,6 +334,14 @@ forge: 每级 +12% 属性，费用 (原价*0.6+200)*(n+1)，成功率 95%-9%n，
 ```bash
 node test.js              # 本地文件模式，43 项
 node test.js mysql        # MySQL 模式，46 项（需要一个能连的 MySQL）
+```
+
+MySQL 模式要有个库可连，最省事的办法是拿 Docker 起一个：
+
+```bash
+docker run -d --name pd-test-mysql -p 3307:3306 \
+  -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=paodian \
+  -e MYSQL_USER=paodian -e MYSQL_PASSWORD=paodian-dev mysql:8.0
 ```
 
 它会在系统临时目录里另起一个服务器（独立端口 8199、独立存档），**绝不碰你正式的 `data.json`**，
