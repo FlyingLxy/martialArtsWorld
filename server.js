@@ -43,7 +43,7 @@ function newPlayer(name, pass){
     clients:new Set(), idle:null, battle:null, pending:null, buf:null,
   };
 }
-const RUNTIME = ['clients','idle','battle','pending','buf'];
+const RUNTIME = ['clients','idle','battle','pending','buf','_lastFull','_lastVit'];
 
 const store = require('./store.js');
 
@@ -170,6 +170,22 @@ function stateOf(p){
     battle: battleView(p),
   };
 }
+/* 高频小包：挂机和打斗时每秒都在动的那几个数，几十字节 */
+function vitals(p){
+  const B = p.battle;
+  return {
+    t:'vitals',
+    hp:Math.floor(p.hp), mp:Math.floor(p.mp), exp:p.exp, need:F.need(p.lv), lv:p.lv,
+    gold:p.gold, herb:p.herb, pot:p.pot,
+    acc: p.idle ? p.idle.acc : null,
+    since: p.idle ? p.idle.since : null,
+    foeHp: B && B.kind==='pve' ? Math.max(0,Math.floor(B.foe.hp)) : null,
+    round: B ? B.round : null,
+    wait: B && B.deadline ? Math.max(0, B.deadline - Date.now()) : 0,
+    myTurn: B ? (B.kind==='pve' ? B.turn==='me' : B.turn===p.name) : null,
+  };
+}
+
 function battleView(p){
   const B = p.battle; if(!B) return null;
   let foe, myTurn;
@@ -191,7 +207,27 @@ function battleView(p){
     }),
   };
 }
-const sync = p => { store.markPlayer(p.name); push(p, stateOf(p)); };
+/* 这些数每秒都在动，由 vitals 小包负责；判断「全量要不要重发」时得先把它们挖掉，
+   否则永远都算「变了」，等于没优化 */
+const JITTER = new Set(['hp','mp','exp','need','gold','herb','pot','acc','since',
+                        'wait','round','myTurn','foeHp']);
+const steady = o => JSON.stringify(o, (k, v) => JITTER.has(k) ? undefined : v);
+
+const sync = p => {
+  store.markPlayer(p.name);
+  if(!p.clients.size) return;
+  const s = stateOf(p);
+  const key = steady(s);
+  const write = txt => p.clients.forEach(res => { try{ res.write('data: ' + txt + '\n\n'); }catch(e){} });
+  if(key !== p._lastFull){                       // 界面结构变了：房间、人物、背包、战斗开始结束…
+    p._lastFull = key;
+    write(JSON.stringify(s));
+    p._lastVit = JSON.stringify(vitals(p));
+    return;
+  }
+  const v = JSON.stringify(vitals(p));           // 只是数字在跳：推几十字节就够
+  if(v !== p._lastVit){ p._lastVit = v; write(v); }
+};
 const syncRoom = scene => { for(const q of inRoom(scene)) sync(q); };
 
 /* ============ 成 长 ============ */
@@ -1185,6 +1221,34 @@ const CMD = {
   },
 };
 
+/* ============ 限 流 ============ */
+/* 公网上什么人都有。没有这层，一个 for 循环就能刷爆注册、把流量费刷上天 */
+const buckets = new Map();                       // key -> {n, until}
+const RL_OFF = process.env.NO_RATELIMIT === '1'; // 自测时关掉，别让测试自己撞限流
+function tooMany(key, max, windowMs){
+  if(RL_OFF) return false;
+  const now = Date.now();
+  let b = buckets.get(key);
+  if(!b || now > b.until){ b = {n:0, until: now + windowMs}; buckets.set(key, b); }
+  return ++b.n > max;
+}
+setInterval(()=>{                                 // 定期清掉过期的桶，别让它无限涨
+  const now = Date.now();
+  for(const [k,b] of buckets) if(now > b.until) buckets.delete(k);
+}, 60000);
+
+/* 走了 nginx 之后要从头里取真实 IP，否则所有人看起来都是同一个来源 */
+function clientIp(req){
+  const xff = req.headers['x-forwarded-for'];
+  if(xff) return String(xff).split(',')[0].trim();
+  return (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+}
+const LIMITS = {
+  login: {max: 10,  win: 60000},                  // 每分钟 10 次登录/注册
+  cmd  : {max: 240, win: 60000},                  // 每分钟 240 条指令，正常玩远达不到
+  sse  : {max: 20,  win: 60000},                  // 每分钟 20 次建连
+};
+
 /* ============ HTTP ============ */
 const MIME = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
               '.css':'text/css; charset=utf-8','.ico':'image/x-icon'};
@@ -1198,6 +1262,10 @@ const server = http.createServer(async (req, res)=>{
   const u = new URL(req.url, 'http://x');
 
   if(u.pathname === '/api/login'){
+    if(tooMany('L:' + clientIp(req), LIMITS.login.max, LIMITS.login.win)){
+      res.writeHead(429, {'Content-Type':'application/json'});
+      return res.end(JSON.stringify({err:'太频繁了，歇一分钟再试。'}));
+    }
     const b = await body(req);
     const name = String(b.name||'').trim().slice(0,10), pass = String(b.pass||'');
     if(!name || !pass) return json(res,{err:'名号和暗号都不能空着。'});
@@ -1216,6 +1284,10 @@ const server = http.createServer(async (req, res)=>{
   }
 
   if(u.pathname === '/api/cmd'){
+    if(tooMany('C:' + clientIp(req), LIMITS.cmd.max, LIMITS.cmd.win)){
+      res.writeHead(429, {'Content-Type':'application/json'});
+      return res.end(JSON.stringify({err:'手别抖那么快。'}));
+    }
     const b = await body(req);
     const name = world.tokens.get(b.token); const p = name && world.players.get(name);
     if(!p) return json(res,{err:'no-auth'});
@@ -1225,13 +1297,18 @@ const server = http.createServer(async (req, res)=>{
   }
 
   if(u.pathname === '/api/events'){
+    if(tooMany('E:' + clientIp(req), LIMITS.sse.max, LIMITS.sse.win)){
+      res.writeHead(429); return res.end();
+    }
     const name = world.tokens.get(u.searchParams.get('token'));
     const p = name && world.players.get(name);
     if(!p){ res.writeHead(401); return res.end(); }
     res.writeHead(200, {'Content-Type':'text/event-stream','Cache-Control':'no-cache',
                         'Connection':'keep-alive','X-Accel-Buffering':'no'});
     res.write('retry: 3000\n\n');
+    if(p.clients.size >= 5){ res.writeHead(429); return res.end(); }   // 一个号最多 5 个窗口
     const first = p.clients.size === 0;
+    p._lastFull = null; p._lastVit = null;      // 新连接进来，下一拍重发全量
     p.clients.add(res);
     req.on('close', ()=>{
       p.clients.delete(res); p.lastSeen = Date.now();

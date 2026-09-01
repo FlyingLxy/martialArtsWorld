@@ -240,6 +240,20 @@ function out(where, html, cls){
 function handle(m){
   if(m.t==='ping') return;
   if(m.t==='state'){ ST = m; render(); return; }
+  if(m.t==='vitals'){                       // 高频小包：只更新那几个数
+    if(!ST) return;
+    const me = ST.me;
+    me.hp=m.hp; me.mp=m.mp; me.exp=m.exp; me.need=m.need; me.lv=m.lv;
+    me.gold=m.gold; me.herb=m.herb; me.pot=m.pot;
+    if(me.idle && m.acc !== null){ me.idle.acc = m.acc; me.idle.since = m.since; }
+    if(ST.battle){
+      if(m.foeHp !== null) ST.battle.foe.hp = m.foeHp;
+      if(m.round !== null) ST.battle.round = m.round;
+      ST.battle.wait = m.wait; ST.battle.myTurn = m.myTurn;
+    }
+    render();
+    return;
+  }
   const where = m.scope==='me' ? 'me' : 'pub';
   if(m.t==='log') return out(where, m.html, m.cls);
   if(m.t==='chat'){

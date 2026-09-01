@@ -66,6 +66,17 @@ class Client {
             if(!line.startsWith('data: ')) continue;
             const m = JSON.parse(line.slice(6));
             if(m.t === 'state') this.state = m;
+            else if(m.t === 'vitals' && this.state){
+              const me = this.state.me;
+              me.hp=m.hp; me.mp=m.mp; me.exp=m.exp; me.need=m.need; me.lv=m.lv;
+              me.gold=m.gold; me.herb=m.herb; me.pot=m.pot;
+              if(me.idle && m.acc !== null){ me.idle.acc = m.acc; me.idle.since = m.since; }
+              if(this.state.battle){
+                if(m.foeHp !== null) this.state.battle.foe.hp = m.foeHp;
+                if(m.round !== null) this.state.battle.round = m.round;
+                this.state.battle.wait = m.wait; this.state.battle.myTurn = m.myTurn;
+              }
+            }
             else if(m.t === 'log') this.logs.push(m.html.replace(/<[^>]+>/g, ''));
             else if(m.t === 'chat') this.logs.push('[chat]' + (m.text||'').replace(/<[^>]+>/g, ''));
           }
@@ -94,7 +105,8 @@ function boot(){
   return new Promise((res, rej) => {
     srv = spawn(process.execPath, ['server.js'], {
       cwd: __dirname,
-      env: {...process.env, PORT:String(PORT), DATA_FILE:SAVE, QUIET:'1', ...DBENV},
+      env: {...process.env, PORT:String(PORT), DATA_FILE:SAVE, QUIET:'1',
+            ...DBENV, ...(process.env.RL_ON ? {} : {NO_RATELIMIT:'1'})},
     });
     let out = '';
     srv.stdout.on('data', d => { out += d; if(out.includes('ready')) res(); });
@@ -342,7 +354,26 @@ async function run(){
   }
 
   if(!USE_MYSQL){
-    G('⑧ 存档：原子写、坏了能从备份救回来');
+    G('⑧ 限流：公网上必须有这层');
+  {
+    // 单独起一个开着限流的服务器来验
+    await down();
+    process.env.RL_ON = '1';
+    await boot();
+    let ok429 = 0, okPass = 0;
+    for(let i=0; i<16; i++){
+      const r = await post('/api/login', {name:'压测'+i, pass:'x', create:1});
+      if(r.err && r.err.includes('太频繁')) ok429++;
+      else if(r.token || r.isNew) okPass++;
+    }
+    ok(okPass > 0, '正常的登录放行了（前 ' + okPass + ' 次）');
+    ok(ok429 > 0, '连着刷到第 ' + (okPass+1) + ' 次就被挡了（挡掉 ' + ok429 + ' 次）');
+    delete process.env.RL_ON;
+    await down();
+    await boot();
+  }
+
+  G('⑧ 存档：原子写、坏了能从备份救回来');
     await down();
     ok(fs.existsSync(SAVE), '关服时把存档落了盘');
     ok(fs.existsSync(SAVE + '.bak'), '同时留了一份备份');
@@ -357,7 +388,26 @@ async function run(){
     ok(h.me.lv === 40, '主存档坏掉后，从备份把角色救了回来', h.me.lv);
     h.close();
   } else {
-    G('⑧ 存档：MySQL 持久化');
+    G('⑧ 限流：公网上必须有这层');
+  {
+    // 单独起一个开着限流的服务器来验
+    await down();
+    process.env.RL_ON = '1';
+    await boot();
+    let ok429 = 0, okPass = 0;
+    for(let i=0; i<16; i++){
+      const r = await post('/api/login', {name:'压测'+i, pass:'x', create:1});
+      if(r.err && r.err.includes('太频繁')) ok429++;
+      else if(r.token || r.isNew) okPass++;
+    }
+    ok(okPass > 0, '正常的登录放行了（前 ' + okPass + ' 次）');
+    ok(ok429 > 0, '连着刷到第 ' + (okPass+1) + ' 次就被挡了（挡掉 ' + ok429 + ' 次）');
+    delete process.env.RL_ON;
+    await down();
+    await boot();
+  }
+
+  G('⑧ 存档：MySQL 持久化');
     // 先记下改动前的家当，再正常关服重启，看数据在不在
     const a = new Client('老手');
     await a.login(); await a.connect(); await a.until(c=>c.me, 6000, '状态');
