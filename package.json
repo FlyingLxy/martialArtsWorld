@@ -5,10 +5,13 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js",
-    "test:mysql": "node test.js mysql"
+    "check": "node gamedata/check.js && node server/check.js",
+    "test": "npm run check && node test.js",
+    "test:mysql": "npm run check && node test.js mysql"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "mysql2": "^3.24.2"
   },

@@ -1,0 +1,101 @@
+:root{
+    --page:#b9c0c8; --box:#fff; --line:#8c959f; --grid:#b7bec6;
+    --head:#3b5b81; --headb:#2c4a6b; --th:#dde5ee; --td:#f7f9fb; --alt:#eef2f6;
+    --ink:#1f2328; --dim:#6b7280; --link:#0b47a1; --vis:#5b3a8e;
+    --g:#0f7a3d; --r:#b3261e; --b:#0b47a1; --p:#7b3fa0; --y:#8a6d1a;
+  }
+  body.night{
+    --page:#0f1114; --box:#1a1e24; --line:#39414b; --grid:#2b323b;
+    --head:#223040; --headb:#151c25; --th:#232c37; --td:#1d232a; --alt:#212930;
+    --ink:#c8ced5; --dim:#7c8693; --link:#7fb0e8; --vis:#b294d8;
+    --g:#6cc08a; --r:#e2776b; --b:#7fb0e8; --p:#c39ade; --y:#d3b45e;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; background:var(--page); color:var(--ink); overflow:hidden;
+       font:13px/1.65 "SimSun","Songti SC","宋体",serif}
+  #app{display:none; height:100vh; flex-direction:column}
+  /* 顶栏 */
+  #bar{background:linear-gradient(var(--head),var(--headb)); color:#fff; padding:5px 12px;
+       display:flex; align-items:baseline; gap:12px; flex:none; border-bottom:2px solid var(--headb)}
+  #bar h1{margin:0; font-size:17px; letter-spacing:4px; text-shadow:1px 1px 0 #0004}
+  #bar .s{font-size:12px; opacity:.85}
+  #bar .sp{flex:1}
+  #bar a{color:#dbe8f7; font-size:12px; text-decoration:none; margin-left:12px; cursor:pointer}
+  #bar a:hover{color:#fff; text-decoration:underline}
+  /* 三栏 */
+  #body{flex:1; display:flex; min-height:0; background:var(--line); gap:1px}
+  #col1{width:206px; flex:none; display:flex; flex-direction:column; gap:1px}
+  #col2{flex:1; display:flex; flex-direction:column; gap:1px; min-width:0}
+  #col3{width:186px; flex:none; display:flex; flex-direction:column; gap:1px}
+  .pane{background:var(--box); overflow:auto; min-height:0}
+  .cap{background:var(--th); border-bottom:1px solid var(--grid); padding:2px 7px; font-size:12px;
+       font-weight:bold; position:sticky; top:0; z-index:2; display:flex; justify-content:space-between}
+  .cap span{font-weight:normal; color:var(--dim)}
+  .in{padding:5px 7px}
+  /* 表格 */
+  table{border-collapse:separate; border-spacing:1px; background:var(--grid); width:100%; font-size:12px}
+  td,th{background:var(--td); padding:1px 5px; line-height:1.5}
+  th{background:var(--th); text-align:left}
+  td.k{color:var(--dim); width:38px; white-space:nowrap}
+  td.v{text-align:right}
+  .bar2{height:7px; background:var(--alt); border:1px solid var(--grid); margin-top:1px}
+  .bar2 i{display:block; height:100%}
+  a{color:var(--link); cursor:pointer; text-decoration:none}
+  a:hover{color:var(--r); text-decoration:underline}
+  /* 房间列表 */
+  .rm{display:flex; justify-content:space-between; padding:2px 7px; border-bottom:1px dotted var(--grid); cursor:pointer}
+  .rm:hover{background:var(--alt)}
+  .rm.here{background:var(--th); font-weight:bold; cursor:default}
+  .rm.lock{color:var(--dim); cursor:not-allowed}
+  .rm b{font-weight:normal}
+  .rm i{font-style:normal; color:var(--g)}
+  .rm.zero i{color:var(--dim)}
+  /* 人物列表 */
+  .pr{padding:2px 7px; border-bottom:1px dotted var(--grid); cursor:pointer; line-height:1.45}
+  .pr:hover{background:var(--alt)}
+  .pr.sel{background:var(--th); outline:1px solid var(--link)}
+  .pr .n{font-weight:bold; color:var(--link)}
+  .pr .m{color:var(--y)}
+  .pr .i{font-size:11px; color:var(--dim)}
+  /* 上下屏 */
+  #pub,#me{overflow-y:auto; padding:4px 9px; white-space:pre-wrap; word-break:break-word}
+  #pub{flex:1.15} #me{flex:1}
+  #pub div,#me div{margin:1px 0}
+  #scene{flex:none; background:var(--alt); border-bottom:1px solid var(--grid); padding:5px 9px}
+  #scene .nm{font-weight:bold}
+  .acts{line-height:2; margin-top:3px}
+  .acts b{color:var(--dim); font-weight:normal; margin-right:5px; font-size:12px}
+  .acts a{margin-right:3px; padding:0 6px; border:1px solid var(--grid); background:var(--td);
+          display:inline-block; white-space:nowrap; font-size:12px}
+  .acts a:hover{background:var(--th); border-color:var(--link); text-decoration:none}
+  .acts .off{margin-right:3px; padding:0 6px; border:1px dashed var(--grid); color:var(--dim);
+             display:inline-block; font-size:12px}
+  /* 输入条 */
+  #inp{flex:none; background:var(--alt); border-top:1px solid var(--grid); padding:4px 6px}
+  #inp .l1{display:flex; gap:4px}
+  #inp select,#inp input,#inp button{font:13px "SimSun","Songti SC",serif; padding:2px 4px;
+    border:1px solid var(--line); background:var(--box); color:var(--ink)}
+  #inp input{flex:1; min-width:0}
+  #inp button{cursor:pointer; background:var(--th); padding:2px 16px}
+  #inp button:hover{background:var(--link); color:#fff}
+  #emo{margin-top:3px; font-size:12px; color:var(--dim); display:flex; align-items:center; flex-wrap:wrap; gap:2px}
+  #emo a{padding:0 5px; border:1px solid var(--grid); background:var(--td); margin-right:1px}
+  #emo b{color:var(--y); font-weight:normal; margin:0 4px}
+  .g{color:var(--g)} .r{color:var(--r)} .b{color:var(--b)} .p{color:var(--p)} .n{color:var(--g)}
+  .d{color:var(--dim)} .sys{color:var(--p)} .room{color:var(--dim)} .pk{color:var(--r)}
+  .act{color:var(--y)} .who{color:var(--g); font-weight:bold}
+  /* 登录 */
+  #login{max-width:420px; margin:8vh auto; background:var(--box); border:1px solid var(--line)}
+  #login .in{padding:16px}
+  #login input{width:100%; margin:3px 0 10px; padding:5px; font:14px "SimSun",serif;
+    border:1px solid var(--line); background:var(--box); color:var(--ink)}
+  #login button{width:100%; padding:6px; font:14px "SimSun",serif; cursor:pointer;
+    background:var(--head); color:#fff; border:1px solid var(--headb)}
+  #err{color:var(--r); min-height:20px; font-size:12px}
+  @media(max-width:760px){
+    body{overflow:auto} #app{height:auto}
+    #body{flex-direction:column} #col1,#col3{width:auto}
+    #col1{flex-direction:row} #col1 .pane{flex:1}
+    #pub,#me{height:150px; flex:none}
+  }

@@ -173,34 +173,73 @@ docker compose logs -f game
 
 ## 代码怎么组织的
 
+按"**谁会改哪块**"分的，不是按技术分层——分工时每个人的改动天然落在不同文件里，少打架。
+
 ```
-game-data.js        数据表 + 数值公式（前后端共用，浏览器走 /data.js 拿）
-server.js           服务端：游戏逻辑 + HTTP + SSE
-store.js            存档层：本地文件 / MySQL 二选一，游戏逻辑不感知
-public/index.html   客户端：一个文件装下全部界面和交互
-test.js             主链自测，node test.js [mysql]
-Dockerfile          容器镜像
-docker-compose.yml  游戏 + MySQL + 数据卷
-solo-单机版.html     早先做的单机版，双击就玩，跟上面几个没有关系
+gamedata/            数据表。策划口的东西都在这儿，改数值不用碰逻辑
+  sects.js           门派：入门加成、掌门
+  skills.js          武功：41 门，招式效果
+  items.js           装备、打造材料、掉落规则、各处物价
+  map.js             地图：场景描述、出口、功能开关
+  mobs.js            野怪、守擂高手、械斗对手
+  flavor.js          泡点奇遇、虚拟动作、等级称号
+  formulas.js        数值公式（调平衡只改这一个文件）
+  index.js           汇总入口；check.js 查跨文件引用
+
+server/              服务端，依赖单向、无环
+  config.js          端口、存档位置
+  core.js            世界状态、玩家对象、存档、SSE 推送、聊天    ← 谁都依赖它，它不依赖谁
+  state.js           打包发给前端的状态；sync 在这儿
+  growth.js          经验升级、泡点收益、奇遇
+  idle.js            泡点
+  economy.js         打造、穿脱、集市、请客送花成亲
+  social.js          告示、书信、悬赏、擂台留影
+  combat.js          战斗与切磋
+  commands.js        指令表 —— 前端能触发的一切都在这儿注册
+  http.js            三个接口、限流、静态文件、开服
+  check.js           查跨模块引用和循环依赖
+
+public/
+  index.html         骨架
+  css/main.css       样式
+  js/net.js          登录、SSE、发指令、消息分屏
+  js/ui.js           状态栏、去处、人物、风云榜、泡点进度
+  js/actions.js      选人、虚拟动作、押注、提亲、塞钱、写信
+  js/views.js        各个整页视图
+  js/boot.js         起手
+
+server.js            入口，只有一行 require
+store.js             存档层：本地文件 / MySQL
+test.js              主链自测
 ```
 
-**`game-data.js` 前后端共用**，所以里面**不能出现任何 Node API**（`require`、`fs`、`process` 都不行）。
-它靠结尾一句 `if (typeof module !== 'undefined') module.exports = ...` 兼容两边。
+**依赖方向**（服务端）：
 
-`server.js` 按注释分区，找东西照这个走：
+```
+core ← state ← growth ← idle ← social ← combat ← commands ← http
+                     ↖ economy ↗
+```
 
-| 行数附近 | 区块 | 装的是 |
-|---|---|---|
-| 14 | 世 界 | `world` 全局状态、玩家对象、存档读写 |
-| 111 | 推 送 | `push` / `toRoom` / `toAll` / `chat` |
-| 143 | 状 态 | `stateOf`、`battleView`——**发给客户端的全部数据在这** |
-| 230 | 成 长 | 升级、泡点收益、奇遇 |
-| 271 | 战 斗 | 招式结算、PvE、切磋、影子 |
-| 583 | 泡 点 | `autoIdle` / `startIdle` / `stopIdle` 和每秒 tick |
-| 645 | 银两的出路 | 打造、请客、送花、成亲、摆摊 |
-| 856 | 一个人也能玩的 | 告示板、书信、悬赏 |
-| 992 | 指 令 | `CMD` 对象，**所有玩家能做的事都在这** |
-| 1216 | HTTP | 三个接口 + 静态文件 |
+往上游调用是允许的，**反过来不行**——`core` 永远不该 require 别人。加新模块前先想清楚它站在哪一层。
+
+### 两个必须跑的检查
+
+```bash
+npm run check        # 等于 gamedata/check.js + server/check.js
+```
+
+- **gamedata/check.js**：查数据文件之间的引用有没有漏 `require`。
+  这类错**只在服务端炸**——浏览器那边是把文件按序拼起来的，同作用域，漏了也不报错。
+- **server/check.js**：查模块间"用了却没引入"的符号，以及循环依赖。
+  拆模块最容易翻车的就是这两样。
+
+`npm test` 会先跑这两个检查再跑功能测试。
+
+### 前端为什么不用打包工具
+
+`gamedata/` 下的文件由服务端 `/data.js` 端点按序拼成一份送给浏览器，前端仍然只加载一个脚本；
+`public/js/*.js` 用普通 `<script>` 顺序加载，共享同一个全局作用域（所以 HTML 里的 `onclick="cmd(...)"` 才能用）。
+**没有构建步骤，clone 下来就能跑**——这个性质值得保住。
 
 ## 数据怎么流动
 
@@ -225,7 +264,7 @@ POST /api/cmd      {token, cmd, args}     →  {ok:1}
 
 ## 想改点东西
 
-绝大多数改动只动 `game-data.js`。
+绝大多数改动只动 `gamedata/` 下的某一个文件。
 
 <details>
 <summary><b>加一个新地方</b></summary>
@@ -310,7 +349,7 @@ if(key !== lastKey){ lastKey = key; $('scene').innerHTML = …; }
 
 ## 数值公式一览
 
-全在 `game-data.js` 的 `F` 里，调数值只改这一处：
+全在 `gamedata/formulas.js` 里，调数值只改这一个文件：
 
 ```js
 need : lv => 60*lv^1.75 + 40*lv                    // 升级所需经验
@@ -403,7 +442,8 @@ docker run -d --name pd-test-mysql -p 3307:3306 \
 - 分支：`main` 保持随时能跑。开 `feat/xxx`、`fix/xxx` 分支，PR 过一遍再合。
 - 改完先跑 `node test.js`（43 项，约一分钟），再开两个浏览器窗口用不同名号登录，
   手动验证你改的那部分 + 打一场架 + 泡一会儿点。测试没盖到界面，那部分只能靠眼睛。
-- **改数值只动 `game-data.js`**，别把常数写死在 `server.js` 里。
+- **改数值只动 `gamedata/formulas.js`**，别把常数写死在逻辑里。
+- 加新玩法前先想清楚它属于哪个模块、站在依赖链的哪一层；提交前跑 `npm test`。
 - 新玩法的判定**一律放服务端**。客户端传上来的任何东西都当成假的。
 - 代码风格跟着现有的来：两空格缩进，中文注释写"为什么"而不是"是什么"，
   游戏内文案用武侠白话，别出现"点击"「按钮」这类现代词。
