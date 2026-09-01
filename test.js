@@ -8,7 +8,7 @@ const fs   = require('node:fs');
 const os   = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
-const D = require('./game-data.js');
+const D = require('./gamedata');
 const { F, MAP, WEAPONS } = D;
 
 const USE_MYSQL = process.argv[2] === 'mysql';

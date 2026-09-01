@@ -4,7 +4,7 @@ const http = require('node:http');
 const fs   = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const D = require('./game-data.js');
+const D = require('./gamedata');
 const {SECTS,SKILLS,WEAPONS,ARMORS,MAP,MOBS,ARENA,GANG_FOE,EVENTS,ACTS,PRICE,MATS,DROP,F,titleOf,plus} = D;
 
 const PORT = process.env.PORT || 8080;
@@ -1258,6 +1258,7 @@ function body(req){
 }
 const json = (res, o) => { res.writeHead(200,{'Content-Type':'application/json'}); res.end(JSON.stringify(o)); };
 
+let dataJs = null;                                // 拼好的前端数据包，只拼一次
 const server = http.createServer(async (req, res)=>{
   const u = new URL(req.url, 'http://x');
 
@@ -1335,8 +1336,16 @@ const server = http.createServer(async (req, res)=>{
   }
 
   if(u.pathname === '/data.js'){
-    res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});
-    return res.end(fs.readFileSync(path.join(__dirname,'game-data.js')));
+    // 把 gamedata/ 下的文件按序拼成一份给浏览器：剥掉只有 Node 用的那几行，
+    // 拼完它们同处一个作用域，跨文件引用照样成立。前端还是只加载这一个 /data.js。
+    if(!dataJs){
+      dataJs = D.ORDER.map(f =>
+        fs.readFileSync(path.join(__dirname, 'gamedata', f + '.js'), 'utf8')
+          .split('\n').filter(l => !l.trimStart().startsWith('/*#node*/')).join('\n')
+      ).join('\n');
+    }
+    res.writeHead(200, {'Content-Type':'text/javascript; charset=utf-8'});
+    return res.end(dataJs);
   }
 
   // 静态

@@ -6,7 +6,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev || npm install --omit=dev
 
-COPY server.js store.js game-data.js ./
+COPY server.js store.js ./
+COPY gamedata ./gamedata
 COPY public ./public
 
 ENV NODE_ENV=production
