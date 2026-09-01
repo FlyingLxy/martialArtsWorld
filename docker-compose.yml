@@ -55,6 +55,7 @@ services:
       # （依赖还在镜像里，只有加了新依赖才需要重新 build）
       - ./server.js:/app/server.js:ro
       - ./store.js:/app/store.js:ro
+      - ./server:/app/server:ro
       - ./gamedata:/app/gamedata:ro
       - ./public:/app/public:ro
     expose:

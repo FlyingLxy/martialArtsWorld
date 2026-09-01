@@ -6,9 +6,9 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev || npm install --omit=dev
 
-COPY server.js store.js ./
-COPY gamedata ./gamedata
-COPY public ./public
+# 整个拷进去，靠 .dockerignore 排除不需要的。
+# 别改回"精确列出每个文件"——拆出新目录时一定会忘，问过一次了。
+COPY . .
 
 ENV NODE_ENV=production
 ENV PORT=8080

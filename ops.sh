@@ -46,7 +46,9 @@ case "${1:-status}" in
     AFTER=$(git rev-parse --short HEAD)
     if [ "$BEFORE" = "$AFTER" ]; then echo "已经是最新的（$AFTER）"; exit 0; fi
     # 依赖变了才需要重新构建镜像，否则源码是挂载进去的，重启就行
-    if git diff --name-only $BEFORE $AFTER | grep -qE '^(package|Dockerfile)'; then
+    # 依赖、镜像定义、或者新增/删除了文件 —— 都得重新构建，光 restart 不够
+    if git diff --name-status $BEFORE $AFTER | grep -qE '^(A|D)' \
+       || git diff --name-only $BEFORE $AFTER | grep -qE '^(package|Dockerfile|docker-compose)'; then
       echo "依赖或镜像有变动，重新构建…"; $DC build game && $DC up -d game
     else
       $DC restart game
