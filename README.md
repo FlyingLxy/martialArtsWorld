@@ -1,4 +1,4 @@
-# 泡点江湖
+# 泡点江湖 · Martial Arts World
 
 仿 2000 年前后那种**文字江湖聊天室**的多人网页游戏——挂着页面就长功力，一屋子人一边泡点一边胡侃。
 
@@ -85,6 +85,24 @@ http://你的机器名.local:8080          ← 主机名，不会变
 **写入策略**：谁的状态变了就标记谁（挂在 `sync()` 上，所以业务代码不用管），默认 2 秒合并写一次；
 关服、崩溃前会立即落盘。**第一次用 MySQL 启动时，如果发现 `data.json` 会自动整个迁进去**，
 迁完把原文件改名成 `data.json.migrated`。
+
+## 日常运维
+
+服务器上不用记 docker 命令，都收在 `ops.sh` 里：
+
+```bash
+./ops.sh              # 看总体状况：容器、内存、磁盘、在线、角色数、最近备份
+./ops.sh log          # 看游戏日志（./ops.sh log db 看数据库的）
+./ops.sh restart      # 重启游戏，不动数据库
+./ops.sh update       # 拉最新代码并生效
+./ops.sh backup       # 立刻备份一次
+./ops.sh stop / start # 全停 / 全起
+```
+
+**改代码后上线只要几秒**：源码是挂载进容器的，`update` 会 `git pull` 然后 `restart`；
+只有动了 `package.json` 或 `Dockerfile`（加了新依赖）才会重新 build 镜像，脚本自己判断。
+
+没装 Portainer 这类面板——省内存，也少一个暴露在公网的攻击面。
 
 ## 备份
 
