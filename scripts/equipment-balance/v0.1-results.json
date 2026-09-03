@@ -5,7 +5,7 @@
   "sourceHashes": {
     "docs/数值基准.md": "db7bca3d32004c1d3a224a4735e0ef9a0734676e36dd8e99fdb69ddd8ee05546",
     "docs/装备与打造.md": "1977d51361cc3047e4c4889e016a836e3bd4da350d70e1428e57e73f895aeb2a",
-    "docs/装备系统.md": "aa9868eb51aa0ec56c383a90309c0c3b7812110efc70a73d713472c962fc077e",
+    "docs/装备系统.md": "0d15f9546a40ad130cc57cf1ff0bbb5e068551dadea2937c0a499e39ffac4cf3",
     "docs/装备数值模拟报告.md": "9716101742df0c6ed2cfc94f87b75b317be0c48de20e9b85697cffdbf25b9746",
     "docs/turn-based-combat.md": "9e9f2fc1d38125634e938364b5371df766e6b2dda376c47f710c683d4aa57a3c",
     "scripts/equipment-balance/simulate-v0.1.js": "234f315476f7da60b3b9da76139047c6d287392ef9bff734c02bdb6ede7a779c"
