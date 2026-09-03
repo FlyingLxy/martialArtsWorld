@@ -3,171 +3,171 @@
   "seed": 20260905,
   "runs": 100000,
   "sourceHashes": {
-    "docs/数值基准.md": "db7bca3d32004c1d3a224a4735e0ef9a0734676e36dd8e99fdb69ddd8ee05546",
-    "docs/装备与打造.md": "1977d51361cc3047e4c4889e016a836e3bd4da350d70e1428e57e73f895aeb2a",
-    "docs/装备系统.md": "0d15f9546a40ad130cc57cf1ff0bbb5e068551dadea2937c0a499e39ffac4cf3",
-    "docs/装备数值模拟报告.md": "9716101742df0c6ed2cfc94f87b75b317be0c48de20e9b85697cffdbf25b9746",
+    "docs/数值基准.md": "eacd53e1774dfc4dc589d0a072c4100c6cba0aaed6a466e2af352f1fb117aa73",
+    "docs/装备与打造.md": "87c72858fabc23b8af19788322e35959d33e0f642fbfcf5f7b68e149c877875e",
+    "docs/装备系统.md": "d4365918e46d7225e9dad23a2dfcc181c72d3894f40b010ea1a3bfa91fda81aa",
+    "docs/装备数值模拟报告.md": "4d6a1a4a6392470e1f22cb7664936eb8c76a82478f8f9e739bf5685a01085a2e",
     "docs/turn-based-combat.md": "9e9f2fc1d38125634e938364b5371df766e6b2dda376c47f710c683d4aa57a3c",
-    "scripts/equipment-balance/simulate-v0.1.js": "234f315476f7da60b3b9da76139047c6d287392ef9bff734c02bdb6ede7a779c"
+    "scripts/equipment-balance/simulate-v0.1.js": "0ed6fb99d4f4d9ac63787ebf245bd1fec146de0ca562d367c4f25554974c2c7b"
   },
   "baseline": [
     {
       "level": 1,
       "growth": 1,
       "totalEP": 3.05,
-      "nonEquipmentEP": 1.98,
-      "equipmentEP": 1.07,
-      "equipmentShare": 0.35,
+      "nonEquipmentEP": 2.22,
+      "equipmentEP": 0.83,
+      "equipmentShare": 0.272037,
       "hp": 51,
       "mp": 3.05,
       "attack": 3.41,
       "defense": 1.28,
       "selfTtk": 15.214,
       "slots": {
-        "weapon": 0.32,
-        "body": 0.21,
-        "head": 0.14,
-        "wrist": 0.14,
-        "feet": 0.13,
-        "accessory": 0.13
+        "weapon": 0.25,
+        "body": 0.17,
+        "head": 0.11,
+        "wrist": 0.11,
+        "feet": 0.1,
+        "accessory": 0.1
       }
     },
     {
       "level": 10,
       "growth": 1.9172,
       "totalEP": 5.84,
-      "nonEquipmentEP": 3.78,
-      "equipmentEP": 2.06,
-      "equipmentShare": 0.353051,
+      "nonEquipmentEP": 4.24,
+      "equipmentEP": 1.6,
+      "equipmentShare": 0.274408,
       "hp": 97,
       "mp": 5.84,
       "attack": 6.54,
       "defense": 2.45,
       "selfTtk": 15.214,
       "slots": {
-        "weapon": 0.62,
-        "body": 0.41,
-        "head": 0.27,
-        "wrist": 0.27,
-        "feet": 0.25,
-        "accessory": 0.25
+        "weapon": 0.48,
+        "body": 0.32,
+        "head": 0.21,
+        "wrist": 0.21,
+        "feet": 0.19,
+        "accessory": 0.19
       }
     },
     {
       "level": 20,
       "growth": 3.9515,
       "totalEP": 12.04,
-      "nonEquipmentEP": 7.75,
-      "equipmentEP": 4.29,
-      "equipmentShare": 0.356441,
+      "nonEquipmentEP": 8.7,
+      "equipmentEP": 3.34,
+      "equipmentShare": 0.277043,
       "hp": 195,
       "mp": 12.04,
       "attack": 13.48,
       "defense": 5.06,
       "selfTtk": 15.214,
       "slots": {
-        "weapon": 1.29,
-        "body": 0.86,
-        "head": 0.56,
-        "wrist": 0.56,
-        "feet": 0.51,
-        "accessory": 0.51
+        "weapon": 1,
+        "body": 0.67,
+        "head": 0.43,
+        "wrist": 0.43,
+        "feet": 0.4,
+        "accessory": 0.4
       }
     },
     {
       "level": 30,
       "growth": 7.0765,
       "totalEP": 21.56,
-      "nonEquipmentEP": 13.8,
-      "equipmentEP": 7.76,
-      "equipmentShare": 0.359831,
+      "nonEquipmentEP": 15.53,
+      "equipmentEP": 6.03,
+      "equipmentShare": 0.279677,
       "hp": 337,
       "mp": 21.56,
       "attack": 24.15,
       "defense": 9.06,
       "selfTtk": 15.214,
       "slots": {
-        "weapon": 2.33,
-        "body": 1.55,
-        "head": 1.01,
-        "wrist": 1.01,
-        "feet": 0.93,
-        "accessory": 0.93
+        "weapon": 1.81,
+        "body": 1.21,
+        "head": 0.78,
+        "wrist": 0.78,
+        "feet": 0.72,
+        "accessory": 0.72
       }
     },
     {
       "level": 40,
       "growth": 12.673,
       "totalEP": 38.61,
-      "nonEquipmentEP": 24.59,
-      "equipmentEP": 14.02,
-      "equipmentShare": 0.36322,
+      "nonEquipmentEP": 27.71,
+      "equipmentEP": 10.9,
+      "equipmentShare": 0.282312,
       "hp": 566,
       "mp": 38.61,
       "attack": 43.25,
       "defense": 16.22,
       "selfTtk": 15.214,
       "slots": {
-        "weapon": 4.21,
-        "body": 2.8,
-        "head": 1.82,
-        "wrist": 1.82,
-        "feet": 1.68,
-        "accessory": 1.68
+        "weapon": 3.27,
+        "body": 2.18,
+        "head": 1.42,
+        "wrist": 1.42,
+        "feet": 1.31,
+        "accessory": 1.31
       }
     },
     {
       "level": 50,
       "growth": 21.1344,
       "totalEP": 64.39,
-      "nonEquipmentEP": 40.79,
-      "equipmentEP": 23.61,
-      "equipmentShare": 0.36661,
+      "nonEquipmentEP": 46.04,
+      "equipmentEP": 18.35,
+      "equipmentShare": 0.284947,
       "hp": 864,
       "mp": 64.39,
       "attack": 72.12,
       "defense": 27.04,
       "selfTtk": 15.214,
       "slots": {
-        "weapon": 7.08,
-        "body": 4.72,
-        "head": 3.07,
-        "wrist": 3.07,
-        "feet": 2.83,
-        "accessory": 2.83
+        "weapon": 5.5,
+        "body": 3.67,
+        "head": 2.39,
+        "wrist": 2.39,
+        "feet": 2.2,
+        "accessory": 2.2
       }
     },
     {
       "level": 60,
       "growth": 32.821,
       "totalEP": 100,
-      "nonEquipmentEP": 63,
-      "equipmentEP": 37,
-      "equipmentShare": 0.37,
+      "nonEquipmentEP": 71.24,
+      "equipmentEP": 28.76,
+      "equipmentShare": 0.287582,
       "hp": 1200,
       "mp": 100,
       "attack": 112,
       "defense": 42,
       "selfTtk": 15.214,
       "slots": {
-        "weapon": 11.1,
-        "body": 7.4,
-        "head": 4.81,
-        "wrist": 4.81,
-        "feet": 4.44,
-        "accessory": 4.44
+        "weapon": 8.63,
+        "body": 5.75,
+        "head": 3.74,
+        "wrist": 3.74,
+        "feet": 3.45,
+        "accessory": 3.45
       }
     }
   ],
   "calibration": {
     "bluePlusZero": {
       "totalEP": 100,
-      "nonEquipmentEP": 63,
-      "equipmentBaseEP": 32,
-      "affixEP": 5
+      "nonEquipmentEP": 71.24183,
+      "equipmentBaseEP": 24.22385620915033,
+      "affixEP": 4.534313725490197
     },
-    "terminalTotalEP": 180,
-    "terminalBaseMultiplier": 2.297297297,
+    "terminalTotalEP": 163.39869281045753,
+    "terminalBaseMultiplier": 2.193181818,
     "canonicalRuns": 100000,
     "cooldownRuns": 200000,
     "enhancementSnapshotHash": "de8f78eb1a55e711d80c42808dd96c5865b28ceae514dce14b9d65b39d4f0f43",
@@ -179,7 +179,7 @@
       "plus1To3": 0.04,
       "plus4To6": 0.06,
       "plus7To9": 0.1,
-      "plus10To15": 0.116216216
+      "plus10To15": 0.098863636
     }
   },
   "slots": [
@@ -223,29 +223,29 @@
       "enhanceCap": 3,
       "baseMultiplierAtCap": 1.12,
       "atZeroNoSet": {
-        "baseEP": 32,
+        "baseEP": 24.223856,
         "affixEP": 0,
-        "equipmentEP": 32,
-        "totalPowerVsBluePlusZero": 0.95
+        "equipmentEP": 24.223856,
+        "totalPowerVsBluePlusZero": 0.954657
       },
       "atCapNoSet": {
-        "baseEP": 32,
-        "enhancementEP": 3.84,
+        "baseEP": 24.223856,
+        "enhancementEP": 2.906863,
         "affixEP": 0,
-        "equipmentEP": 35.84,
-        "totalEP": 98.84,
-        "totalPowerVsBluePlusZero": 0.9884,
-        "equipmentShare": 0.362606
+        "equipmentEP": 27.130719,
+        "totalEP": 98.372549,
+        "totalPowerVsBluePlusZero": 0.983725,
+        "equipmentShare": 0.275796
       },
       "atCapFullSet": {
-        "baseEP": 32,
-        "enhancementEP": 3.84,
+        "baseEP": 24.223856,
+        "enhancementEP": 2.906863,
         "affixEP": 0,
         "setEP": 0,
-        "equipmentEP": 35.84,
-        "totalEP": 98.84,
-        "totalPowerVsBluePlusZero": 0.9884,
-        "equipmentShare": 0.362606
+        "equipmentEP": 27.130719,
+        "totalEP": 98.372549,
+        "totalPowerVsBluePlusZero": 0.983725,
+        "equipmentShare": 0.275796
       }
     },
     {
@@ -256,195 +256,195 @@
       "enhanceCap": 6,
       "baseMultiplierAtCap": 1.3,
       "atZeroNoSet": {
-        "baseEP": 32,
-        "affixEP": 5,
-        "equipmentEP": 37,
+        "baseEP": 24.223856,
+        "affixEP": 4.534314,
+        "equipmentEP": 28.75817,
         "totalPowerVsBluePlusZero": 1
       },
       "atCapNoSet": {
-        "baseEP": 32,
-        "enhancementEP": 9.6,
-        "affixEP": 5,
-        "equipmentEP": 46.6,
-        "totalEP": 109.6,
-        "totalPowerVsBluePlusZero": 1.096,
-        "equipmentShare": 0.425182
+        "baseEP": 24.223856,
+        "enhancementEP": 7.267157,
+        "affixEP": 4.534314,
+        "equipmentEP": 36.025327,
+        "totalEP": 107.267157,
+        "totalPowerVsBluePlusZero": 1.072672,
+        "equipmentShare": 0.335847
       },
       "atCapFullSet": {
-        "baseEP": 32,
-        "enhancementEP": 9.6,
-        "affixEP": 5,
-        "setEP": 12,
-        "equipmentEP": 58.6,
-        "totalEP": 121.6,
-        "totalPowerVsBluePlusZero": 1.216,
-        "equipmentShare": 0.481908
+        "baseEP": 24.223856,
+        "enhancementEP": 7.267157,
+        "affixEP": 4.534314,
+        "setEP": 10.947712,
+        "equipmentEP": 46.973039,
+        "totalEP": 118.214869,
+        "totalPowerVsBluePlusZero": 1.182149,
+        "equipmentShare": 0.397353
       }
     },
     {
       "id": "purple",
       "name": "珍品",
-      "baseFactorVsBlue": 1.052083,
+      "baseFactorVsBlue": 1.062395,
       "affixCount": 2,
       "enhanceCap": 9,
       "baseMultiplierAtCap": 1.6,
       "atZeroNoSet": {
-        "baseEP": 33.666667,
-        "affixEP": 10,
-        "equipmentEP": 43.666667,
-        "totalPowerVsBluePlusZero": 1.066667
+        "baseEP": 25.735294,
+        "affixEP": 9.068627,
+        "equipmentEP": 34.803922,
+        "totalPowerVsBluePlusZero": 1.060458
       },
       "atCapNoSet": {
-        "baseEP": 33.666667,
-        "enhancementEP": 20.2,
-        "affixEP": 10,
-        "equipmentEP": 63.866667,
-        "totalEP": 126.866667,
-        "totalPowerVsBluePlusZero": 1.268667,
-        "equipmentShare": 0.503416
+        "baseEP": 25.735294,
+        "enhancementEP": 15.441176,
+        "affixEP": 9.068627,
+        "equipmentEP": 50.245098,
+        "totalEP": 121.486928,
+        "totalPowerVsBluePlusZero": 1.214869,
+        "equipmentShare": 0.413584
       },
       "atCapFullSet": {
-        "baseEP": 33.666667,
-        "enhancementEP": 20.2,
-        "affixEP": 10,
-        "setEP": 12,
-        "equipmentEP": 75.866667,
-        "totalEP": 138.866667,
-        "totalPowerVsBluePlusZero": 1.388667,
-        "equipmentShare": 0.546327
+        "baseEP": 25.735294,
+        "enhancementEP": 15.441176,
+        "affixEP": 9.068627,
+        "setEP": 10.947712,
+        "equipmentEP": 61.19281,
+        "totalEP": 132.434641,
+        "totalPowerVsBluePlusZero": 1.324346,
+        "equipmentShare": 0.46206
       }
     },
     {
       "id": "orange",
       "name": "绝品",
-      "baseFactorVsBlue": 1.104167,
+      "baseFactorVsBlue": 1.124789,
       "affixCount": 3,
       "enhanceCap": 12,
-      "baseMultiplierAtCap": 1.948649,
+      "baseMultiplierAtCap": 1.896591,
       "atZeroNoSet": {
-        "baseEP": 35.333333,
-        "affixEP": 15,
-        "equipmentEP": 50.333333,
-        "totalPowerVsBluePlusZero": 1.133333
+        "baseEP": 27.246732,
+        "affixEP": 13.602941,
+        "equipmentEP": 40.849673,
+        "totalPowerVsBluePlusZero": 1.120915
       },
       "atCapNoSet": {
-        "baseEP": 35.333333,
-        "enhancementEP": 33.518919,
-        "affixEP": 15,
-        "equipmentEP": 83.852252,
-        "totalEP": 146.852252,
-        "totalPowerVsBluePlusZero": 1.468523,
-        "equipmentShare": 0.570997
+        "baseEP": 27.246732,
+        "enhancementEP": 24.429172,
+        "affixEP": 13.602941,
+        "equipmentEP": 65.278845,
+        "totalEP": 136.520676,
+        "totalPowerVsBluePlusZero": 1.365207,
+        "equipmentShare": 0.478161
       },
       "atCapFullSet": {
-        "baseEP": 35.333333,
-        "enhancementEP": 33.518919,
-        "affixEP": 15,
-        "setEP": 12,
-        "equipmentEP": 95.852252,
-        "totalEP": 158.852252,
-        "totalPowerVsBluePlusZero": 1.588523,
-        "equipmentShare": 0.603405
+        "baseEP": 27.246732,
+        "enhancementEP": 24.429172,
+        "affixEP": 13.602941,
+        "setEP": 10.947712,
+        "equipmentEP": 76.226558,
+        "totalEP": 147.468388,
+        "totalPowerVsBluePlusZero": 1.474684,
+        "equipmentShare": 0.516901
       }
     },
     {
       "id": "red",
       "name": "神兵",
-      "baseFactorVsBlue": 1.15625,
+      "baseFactorVsBlue": 1.187184,
       "affixCount": 4,
       "enhanceCap": 15,
-      "baseMultiplierAtCap": 2.297297,
+      "baseMultiplierAtCap": 2.193182,
       "atZeroNoSet": {
-        "baseEP": 37,
-        "affixEP": 20,
-        "equipmentEP": 57,
-        "totalPowerVsBluePlusZero": 1.2
+        "baseEP": 28.75817,
+        "affixEP": 18.137255,
+        "equipmentEP": 46.895425,
+        "totalPowerVsBluePlusZero": 1.181373
       },
       "atCapNoSet": {
-        "baseEP": 37,
-        "enhancementEP": 48,
-        "affixEP": 20,
-        "equipmentEP": 105,
-        "totalEP": 168,
-        "totalPowerVsBluePlusZero": 1.68,
-        "equipmentShare": 0.625
+        "baseEP": 28.75817,
+        "enhancementEP": 34.313725,
+        "affixEP": 18.137255,
+        "equipmentEP": 81.20915,
+        "totalEP": 152.45098,
+        "totalPowerVsBluePlusZero": 1.52451,
+        "equipmentShare": 0.53269
       },
       "atCapFullSet": {
-        "baseEP": 37,
-        "enhancementEP": 48,
-        "affixEP": 20,
-        "setEP": 12,
-        "equipmentEP": 117,
-        "totalEP": 180,
-        "totalPowerVsBluePlusZero": 1.8,
-        "equipmentShare": 0.65
+        "baseEP": 28.75817,
+        "enhancementEP": 34.313725,
+        "affixEP": 18.137255,
+        "setEP": 10.947712,
+        "equipmentEP": 92.156863,
+        "totalEP": 163.398693,
+        "totalPowerVsBluePlusZero": 1.633987,
+        "equipmentShare": 0.564
       }
     }
   ],
   "terminalProfile": {
     "affixRoll": 1,
     "displayPercent": {
-      "level": 18,
-      "attributePoints": 5,
-      "talents": 12,
-      "equipmentBase": 20.6,
-      "enhancement": 26.7,
+      "level": 15,
+      "attributePoints": 10.6,
+      "talents": 18,
+      "equipmentBase": 17.6,
+      "enhancement": 21,
       "affixes": 11.1,
       "setBonus": 6.7
     },
     "exactEP": {
-      "level": 32.4,
-      "attributePoints": 9,
-      "talents": 21.6,
-      "equipmentBase": 37,
-      "enhancement": 48,
-      "affixes": 20,
-      "setBonus": 12
+      "level": 24.50980392156863,
+      "attributePoints": 17.3202614379085,
+      "talents": 29.411764705882355,
+      "equipmentBase": 28.758169934640527,
+      "enhancement": 34.31372549019608,
+      "affixes": 18.137254901960787,
+      "setBonus": 10.947712418300656
     },
-    "displaySum": 100.1,
-    "totalEP": 180,
-    "totalPowerVsBluePlusZero": 1.8,
-    "equipmentEP": 117,
-    "equipmentShare": 0.65,
+    "displaySum": 100,
+    "totalEP": 163.398693,
+    "totalPowerVsBluePlusZero": 1.633987,
+    "equipmentEP": 92.156863,
+    "equipmentShare": 0.564,
     "theoreticalAffixRollRange": {
       "theoreticalMinimum": {
         "affixRoll": 0.8,
-        "affixEP": 16,
-        "equipmentEP": 113,
-        "totalEP": 176,
-        "equipmentShare": 0.642045
+        "affixEP": 14.509804,
+        "equipmentEP": 88.529412,
+        "totalEP": 159.771242,
+        "equipmentShare": 0.554101
       },
       "expected": {
         "affixRoll": 1,
-        "affixEP": 20,
-        "equipmentEP": 117,
-        "totalEP": 180,
-        "equipmentShare": 0.65
+        "affixEP": 18.137255,
+        "equipmentEP": 92.156863,
+        "totalEP": 163.398693,
+        "equipmentShare": 0.564
       },
       "theoreticalMaximum": {
         "affixRoll": 1.2,
-        "affixEP": 24,
-        "equipmentEP": 121,
-        "totalEP": 184,
-        "equipmentShare": 0.657609
+        "affixEP": 21.764706,
+        "equipmentEP": 95.784314,
+        "totalEP": 167.026144,
+        "equipmentShare": 0.573469
       }
     },
     "illustrativeEqualTtkStatsAt60": {
-      "hp": 1978,
-      "attack": 220.1,
-      "defense": 69.2,
-      "selfTtk": 15.206
+      "hp": 1816.6,
+      "attack": 197.7,
+      "defense": 63.6,
+      "selfTtk": 15.031
     }
   },
   "largestSingleQualityStep": {
     "from": "blue",
     "to": "purple",
     "slot": "weapon",
-    "enhanceLevel": 0,
+    "enhanceLevel": 6,
     "affixRoll": 1,
-    "deltaEP": 2,
-    "fromTotalEP": 100,
-    "relativePowerGain": 0.02
+    "deltaEP": 1.949755,
+    "fromTotalEP": 107.267157,
+    "relativePowerGain": 0.018177
   },
   "largestAlignedHighRollQualityStep": {
     "from": "blue",
@@ -452,28 +452,28 @@
     "slot": "weapon",
     "enhanceLevel": 0,
     "affixRoll": 1.2,
-    "deltaEP": 2.3,
-    "fromTotalEP": 101,
-    "relativePowerGain": 0.022772
+    "deltaEP": 2.085784,
+    "fromTotalEP": 100.906863,
+    "relativePowerGain": 0.02067
   },
   "setBudget": {
-    "twoPiece": 0.016666666666666666,
-    "fourPiece": 0.03888888888888889,
-    "sixPiece": 0.06666666666666667,
-    "fourPlusTwo": 0.05555555555555555,
+    "twoPiece": 0.01675,
+    "fourPiece": 0.03908333333333333,
+    "sixPiece": 0.067,
+    "fourPlusTwo": 0.05583333333333333,
     "twoPieceEP": 3,
     "fourPieceEP": 7,
-    "sixPieceEP": 12,
-    "fourPlusTwoEP": 10,
-    "sixVsFourPlusTwoBudgetGap": 0.011111,
-    "budgetGapAtTerminal": 0.011111
+    "sixPieceEP": 10.947712,
+    "fourPlusTwoEP": 9.123094,
+    "sixVsFourPlusTwoBudgetGap": 0.011167,
+    "budgetGapAtTerminal": 0.011167
   },
   "caps": {
     "equipment": {
-      "critChancePoints": 15,
-      "critDamage": 0.3,
-      "dodgePoints": 12,
-      "cooldownExtraAdvance": 0.15
+      "critChancePoints": 13.603,
+      "critDamage": 0.2721,
+      "dodgePoints": 10.882,
+      "cooldownExtraAdvance": 0.136
     },
     "global": {
       "critChance": 0.4,
@@ -486,15 +486,15 @@
     "agility": 0.03,
     "talents": 0.04,
     "critChancePointsPerEP": 2.5,
-    "sixSlotCritAffixEPAtExpectedRoll": 5,
-    "sixSlotCritAffixEPAtAlignedHighRoll": 6,
-    "equipmentAtExpectedAffixRoll": 0.125,
-    "equipmentAtAlignedHighRoll": 0.15,
-    "totalAtExpectedAffixRoll": 0.275,
-    "totalAtAlignedHighRoll": 0.3,
+    "sixSlotCritAffixEPAtExpectedRoll": 4.534314,
+    "sixSlotCritAffixEPAtAlignedHighRoll": 5.441176,
+    "equipmentAtExpectedAffixRoll": 0.113358,
+    "equipmentAtAlignedHighRoll": 0.136029,
+    "totalAtExpectedAffixRoll": 0.263358,
+    "totalAtAlignedHighRoll": 0.286029,
     "critMultiplierWithEquipment": 1.75,
-    "expectedDamageVsBaselineAtExpectedAffixRoll": 0.1643,
-    "expectedDamageVsBaselineAtAlignedHighRoll": 0.1824
+    "expectedDamageVsBaselineAtExpectedAffixRoll": 0.1559,
+    "expectedDamageVsBaselineAtAlignedHighRoll": 0.1723
   },
   "cooldown": [
     {
@@ -505,17 +505,17 @@
     {
       "base": 2,
       "noReduction": 2,
-      "atCap": 1.849
+      "atCap": 1.864
     },
     {
       "base": 3,
       "noReduction": 3,
-      "atCap": 2.721
+      "atCap": 2.745
     },
     {
       "base": 4,
       "noReduction": 4,
-      "atCap": 3.593
+      "atCap": 3.627
     }
   ],
   "enhancement": [

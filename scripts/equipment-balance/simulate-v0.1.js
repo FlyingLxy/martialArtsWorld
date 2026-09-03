@@ -30,42 +30,50 @@ const SLOTS = [
   { id: 'accessory', name: '佩饰', share: 0.12 },
 ];
 
-// 用户给定的终局显示比例合计为 100.1%，这是保留一位小数造成的舍入。
-// 内部使用能够精确闭合到 180 EP 的隐藏值；界面只显示一位小数。
+// 终局显示比例合计 100.0%；内部使用能够精确闭合到 163.4 EP 的隐藏值。
+// 2026-09 校准：打造让 5.6 个点给属性点、天赋提到 18%，详见 docs/数值基准.md 第二之四节。
 const FINAL_DISPLAY = {
-  level: 18.0,
-  attributePoints: 5.0,
-  talents: 12.0,
-  equipmentBase: 20.6,
-  enhancement: 26.7,
+  level: 15.0,
+  attributePoints: 10.6,
+  talents: 18.0,
+  equipmentBase: 17.6,
+  enhancement: 21.0,
   affixes: 11.1,
   setBonus: 6.7,
 };
-const TERMINAL_POWER_EP = 180; // 60 级精品 +0 标准角色 = 100 EP，终局目标 +80%。
+// 全部从 FINAL_DISPLAY 派生，避免手写四舍五入值导致账本不精确闭合。
+// 锚点：60 级精品 +0 标准角色 = 100 EP = (非装备 + 白板) 占比 × 终局总量。
+const NON_GEAR_SHARE = (FINAL_DISPLAY.level + FINAL_DISPLAY.attributePoints + FINAL_DISPLAY.talents) / 100;
+const BASELINE_SHARE = NON_GEAR_SHARE + FINAL_DISPLAY.equipmentBase / 100;
+const TERMINAL_POWER_EP = 100 / BASELINE_SHARE; // ≈163.40，终局目标 +63%。
+const ep = pct => (pct / 100) * TERMINAL_POWER_EP;
 const TERMINAL_COMPONENT_EP = {
-  level: 32.4,
-  attributePoints: 9,
-  talents: 21.6,
-  equipmentBase: 37,
-  enhancement: 48,
-  affixes: 20,
-  setBonus: 12,
+  level: ep(FINAL_DISPLAY.level),
+  attributePoints: ep(FINAL_DISPLAY.attributePoints),
+  talents: ep(FINAL_DISPLAY.talents),
+  equipmentBase: ep(FINAL_DISPLAY.equipmentBase),
+  enhancement: ep(FINAL_DISPLAY.enhancement),
+  affixes: ep(FINAL_DISPLAY.affixes),
+  setBonus: ep(FINAL_DISPLAY.setBonus),
 };
+const B60 = TERMINAL_COMPONENT_EP.equipmentBase; // 精品 +0 装备基线，与神兵白板同值
+const NON_GEAR_EP = TERMINAL_POWER_EP * NON_GEAR_SHARE; // 非装备总量，升级期与终局共用同一份
+const TERMINAL_GEAR_EP = TERMINAL_POWER_EP - NON_GEAR_EP; // 终局装备总量
 
-// 60 级精品 +0 标准装的 37 EP 拆成 32 EP 白板属性与 5 EP 的六条平均蓝词条。
+// 60 级精品 +0 标准装的 28.8 EP 拆成 24.3 EP 白板属性与 4.5 EP 的六条平均蓝词条。
 // 各品阶使用独立的“白板池 + 词条池”，禁止再用单一品质倍率乘整个装备预算。
-const BLUE_BASE_EP = 32;
-const BLUE_AFFIX_EP = 5;
+const BLUE_AFFIX_EP = TERMINAL_COMPONENT_EP.affixes / 4;
+const BLUE_BASE_EP = B60 - BLUE_AFFIX_EP;
 
 const RANKS = [
-  { id: 'white', name: '凡品', baseEP: 32, affixCount: 0, affixEP: 0, cap: 3, hasSet: false },
-  { id: 'blue', name: '精品', baseEP: 32, affixCount: 1, affixEP: 5, cap: 6, hasSet: true },
-  { id: 'purple', name: '珍品', baseEP: 101 / 3, affixCount: 2, affixEP: 10, cap: 9, hasSet: true },
-  { id: 'orange', name: '绝品', baseEP: 106 / 3, affixCount: 3, affixEP: 15, cap: 12, hasSet: true },
-  { id: 'red', name: '神兵', baseEP: 37, affixCount: 4, affixEP: 20, cap: 15, hasSet: true },
+  { id: 'white', name: '凡品', baseEP: BLUE_BASE_EP, affixCount: 0, affixEP: 0, cap: 3, hasSet: false },
+  { id: 'blue', name: '精品', baseEP: BLUE_BASE_EP, affixCount: 1, affixEP: BLUE_AFFIX_EP, cap: 6, hasSet: true },
+  { id: 'purple', name: '珍品', baseEP: BLUE_BASE_EP + (B60 - BLUE_BASE_EP) / 3, affixCount: 2, affixEP: 2 * BLUE_AFFIX_EP, cap: 9, hasSet: true },
+  { id: 'orange', name: '绝品', baseEP: BLUE_BASE_EP + 2 * (B60 - BLUE_BASE_EP) / 3, affixCount: 3, affixEP: 3 * BLUE_AFFIX_EP, cap: 12, hasSet: true },
+  { id: 'red', name: '神兵', baseEP: B60, affixCount: 4, affixEP: 4 * BLUE_AFFIX_EP, cap: 15, hasSet: true },
 ];
 
-// 每级均相对装备 +0 白板加算；最高档由“打造 48 EP”反算。
+// 每级均相对装备 +0 白板加算；最高档由“打造 34.3 EP”反算。
 const TERMINAL_ENHANCE_RATIO = TERMINAL_COMPONENT_EP.enhancement / TERMINAL_COMPONENT_EP.equipmentBase;
 const TERMINAL_BASE_MULTIPLIER = 1 + TERMINAL_ENHANCE_RATIO;
 const TOP_GAIN = (TERMINAL_ENHANCE_RATIO - 3 * 0.04 - 3 * 0.06 - 3 * 0.10) / 6;
@@ -105,16 +113,18 @@ const EXPECTED_ATTEMPT_COST_SIGNATURES = [
 ];
 
 const SET_BUDGET = {
-  twoPiece: 3 / TERMINAL_POWER_EP,
-  fourPiece: 7 / TERMINAL_POWER_EP,
+  twoPiece: ep(FINAL_DISPLAY.setBonus * 3 / 12) / TERMINAL_POWER_EP,
+  fourPiece: ep(FINAL_DISPLAY.setBonus * 7 / 12) / TERMINAL_POWER_EP,
   sixPiece: TERMINAL_COMPONENT_EP.setBonus / TERMINAL_POWER_EP,
-  fourPlusTwo: 10 / TERMINAL_POWER_EP,
+  fourPlusTwo: ep(FINAL_DISPLAY.setBonus * 10 / 12) / TERMINAL_POWER_EP,
 };
+// 装备总上限锚定在“120% 对齐高滚值”这一档，因此随词条预算同比缩放。
+const AFFIX_SCALE = TERMINAL_COMPONENT_EP.affixes / 20; // 相对旧预算 20 EP 的比例
 const EQUIPMENT_CAPS = {
-  critChancePoints: 15,
-  critDamage: 0.30,
-  dodgePoints: 12,
-  cooldownExtraAdvance: 0.15,
+  critChancePoints: round(15 * AFFIX_SCALE, 3),
+  critDamage: round(0.30 * AFFIX_SCALE, 4),
+  dodgePoints: round(12 * AFFIX_SCALE, 3),
+  cooldownExtraAdvance: round(0.15 * AFFIX_SCALE, 4),
 };
 const GLOBAL_CAPS = { critChance: 0.40, critMultiplier: 2.00, dodgeBonus: 0.25 };
 const CRIT_CHANCE_POINTS_PER_EP = 2.50;
@@ -142,8 +152,11 @@ function growth(level) {
     * Math.pow(1.045, Math.min(Math.max(level - 45, 0), 15));
 }
 
+// 60 级锚定 B60/100；1 级按原比例形状（35/37）反推起点，中间线性。
+const GEAR_SHARE_60 = B60 / 100;
+const GEAR_SHARE_1 = GEAR_SHARE_60 * (35 / 37);
 function gearShare(level) {
-  return 0.35 + 0.02 * (level - 1) / 59;
+  return GEAR_SHARE_1 + (GEAR_SHARE_60 - GEAR_SHARE_1) * (level - 1) / 59;
 }
 
 const G60 = growth(60);
@@ -188,9 +201,9 @@ function buildRankProfile(rank) {
   const equipmentAtZeroNoSet = rank.baseEP + rank.affixEP;
   const equipmentAtCapNoSet = rank.baseEP + enhancementEP + rank.affixEP;
   const equipmentAtCapFullSet = rank.baseEP + enhancementEP + rank.affixEP + setEP;
-  const totalAtZeroNoSet = 63 + equipmentAtZeroNoSet;
-  const totalAtCapNoSet = 63 + equipmentAtCapNoSet;
-  const totalAtCapFullSet = 63 + equipmentAtCapFullSet;
+  const totalAtZeroNoSet = NON_GEAR_EP + equipmentAtZeroNoSet;
+  const totalAtCapNoSet = NON_GEAR_EP + equipmentAtCapNoSet;
+  const totalAtCapFullSet = NON_GEAR_EP + equipmentAtCapFullSet;
   return {
     id: rank.id,
     name: rank.name,
@@ -417,7 +430,7 @@ function terminalAtAffixRoll(affixRoll) {
   const enhancementEP = redRank.baseEP * (enhanceBaseMultiplier(redRank.cap) - 1);
   const affixEP = redRank.affixEP * affixRoll;
   const equipmentEP = redRank.baseEP + enhancementEP + affixEP + TERMINAL_COMPONENT_EP.setBonus;
-  const totalEP = 63 + equipmentEP;
+  const totalEP = NON_GEAR_EP + equipmentEP;
   return {
     affixRoll,
     affixEP: round(affixEP, 6),
@@ -440,7 +453,7 @@ function enumerateSingleQualitySteps(affixRoll) {
     const commonCap = Math.min(from.cap, to.cap);
     for (let enhanceLevel = 0; enhanceLevel <= commonCap; enhanceLevel += 1) {
       const baseMultiplier = enhanceBaseMultiplier(enhanceLevel);
-      const fromTotalEP = 63 + from.baseEP * baseMultiplier + from.affixEP * affixRoll;
+      const fromTotalEP = NON_GEAR_EP + from.baseEP * baseMultiplier + from.affixEP * affixRoll;
       for (const slot of SLOTS) {
         const deltaEP = slot.share * (
           (to.baseEP - from.baseEP) * baseMultiplier
@@ -517,7 +530,7 @@ const result = {
   ]),
   baseline: baselineTable,
   calibration: {
-    bluePlusZero: { totalEP: 100, nonEquipmentEP: 63, equipmentBaseEP: BLUE_BASE_EP, affixEP: BLUE_AFFIX_EP },
+    bluePlusZero: { totalEP: 100, nonEquipmentEP: round(NON_GEAR_EP, 6), equipmentBaseEP: BLUE_BASE_EP, affixEP: BLUE_AFFIX_EP },
     terminalTotalEP: TERMINAL_POWER_EP,
     terminalBaseMultiplier: round(TERMINAL_BASE_MULTIPLIER, 9),
     canonicalRuns: CANONICAL_RUNS,
@@ -566,8 +579,8 @@ const result = {
     ...SET_BUDGET,
     twoPieceEP: 3,
     fourPieceEP: 7,
-    sixPieceEP: 12,
-    fourPlusTwoEP: 10,
+    sixPieceEP: round(TERMINAL_COMPONENT_EP.setBonus, 6),
+    fourPlusTwoEP: round(TERMINAL_COMPONENT_EP.setBonus * 10 / 12, 6),
     sixVsFourPlusTwoBudgetGap: round(SET_BUDGET.sixPiece - SET_BUDGET.fourPlusTwo, 6),
     budgetGapAtTerminal: round(SET_BUDGET.sixPiece - SET_BUDGET.fourPlusTwo, 6),
   },
@@ -672,7 +685,8 @@ assert(baselineTable.every((row, index) => index === 0 || row.totalEP > baseline
 assert(baselineTable.every((row, index) => index === 0 || row.mp > baselineTable[index - 1].mp)
   && baselineTable.at(-1).mp === 100, 'BASE.mp 等级曲线不单调或 60 级锚点不为 100');
 assert(Math.abs(baselineTable[0].selfTtk - baselineTable.at(-1).selfTtk) < 0.02, '等级两端 TTK 漂移');
-assert(baselineTable.at(-1).totalEP === 100 && baselineTable.at(-1).equipmentEP === 37, '60 级标准档案不为 100／37 EP');
+// 表内数值按两位小数入库，容差取半个刻度。
+assert(Math.abs(baselineTable.at(-1).totalEP - 100) < 0.01 && Math.abs(baselineTable.at(-1).equipmentEP - B60) < 0.01, `60 级标准档案不为 100／${B60.toFixed(2)} EP`);
 assert(rankProfiles.find(rank => rank.id === 'blue').atZeroNoSet.totalPowerVsBluePlusZero === 1, '精品 +0 基线不为 100 EP');
 assert(rankProfiles.every((rank, index) => index === 0
   || rank.atZeroNoSet.equipmentEP > rankProfiles[index - 1].atZeroNoSet.equipmentEP), '品阶 +0 预算不单调');
@@ -680,21 +694,25 @@ assert(RANKS.every(rank => Math.abs(rank.affixEP - rank.affixCount * BLUE_AFFIX_
 assert(Object.entries(FINAL_DISPLAY).every(([key, value]) => round(TERMINAL_COMPONENT_EP[key] / TERMINAL_POWER_EP * 100, 1) === value), '终局显示比例与精确 EP 不一致');
 assert(result.largestSingleQualityStep.relativePowerGain <= 0.0200001, '期望词条下单件升品超过当前角色总战力 2%');
 assert(singleQualitySteps.every(step => step.relativePowerGain > 0), '存在升品后战力反降的共同打造档案');
-assert(round(result.largestAlignedHighRollQualityStep.relativePowerGain * 100, 3) === 2.277,
-  '120% 对齐高滚值的单件升品理论最大值不为 2.277%');
-assert(Math.abs(result.terminalProfile.totalPowerVsBluePlusZero - 1.8) < 1e-12, '终局总战力不为标准档案的 1.8 倍');
-assert(Math.abs(result.terminalProfile.equipmentShare - 0.65) < 1e-12, '终局装备占比不为 65%');
-assert(result.terminalProfile.theoreticalAffixRollRange.expected.totalEP === 180
-  && result.terminalProfile.theoreticalAffixRollRange.expected.equipmentEP === 117,
-'期望词条滚值的终局档案不为 180／117 EP');
-assert(result.terminalProfile.theoreticalAffixRollRange.theoreticalMaximum.equipmentShare <= 0.66,
-  '全词条理论高滚值使终局装备占比突破 66% 极值护栏');
+assert(result.largestAlignedHighRollQualityStep.relativePowerGain <= 0.0250001,
+  '120% 对齐高滚值的单件升品理论最大值超过 2.5%');
+assert(Math.abs(result.terminalProfile.totalPowerVsBluePlusZero - TERMINAL_POWER_EP / 100) < 1e-6,
+  `终局总战力不为标准档案的 ${(TERMINAL_POWER_EP / 100).toFixed(3)} 倍`);
+assert(Math.abs(result.terminalProfile.equipmentShare - TERMINAL_GEAR_EP / TERMINAL_POWER_EP) < 1e-6,
+  `终局装备占比不为 ${(TERMINAL_GEAR_EP / TERMINAL_POWER_EP * 100).toFixed(1)}%`);
+assert(Math.abs(result.terminalProfile.theoreticalAffixRollRange.expected.totalEP - TERMINAL_POWER_EP) < 0.01
+  && Math.abs(result.terminalProfile.theoreticalAffixRollRange.expected.equipmentEP - TERMINAL_GEAR_EP) < 0.01,
+`期望词条滚值的终局档案不为 ${TERMINAL_POWER_EP.toFixed(1)}／${TERMINAL_GEAR_EP.toFixed(1)} EP`);
+assert(result.terminalProfile.theoreticalAffixRollRange.theoreticalMaximum.equipmentShare <= 0.575,
+  '全词条理论高滚值使终局装备占比突破 57.5% 极值护栏');
 assert(Math.abs(Object.values(TERMINAL_COMPONENT_EP).reduce((sum, value) => sum + value, 0) - TERMINAL_POWER_EP) < 1e-12, '终局 EP 不闭合');
-assert(Math.abs(result.terminalProfile.equipmentEP - 117) < 1e-9, '终局装备 EP 不为 117');
-assert(Math.abs(maxRed.atCapNoSet.enhancementEP - 48) < 1e-9, '神兵 +15 打造增量不为 48 EP');
-assert(result.setBudget.sixPieceEP === 12 && result.setBudget.fourPlusTwoEP === 10
-  && Math.abs(result.setBudget.sixPiece - result.setBudget.sixPieceEP / TERMINAL_POWER_EP) < 1e-12
-  && Math.abs(result.setBudget.fourPlusTwo - result.setBudget.fourPlusTwoEP / TERMINAL_POWER_EP) < 1e-12, '套装预算不闭合');
+assert(Math.abs(result.terminalProfile.equipmentEP - TERMINAL_GEAR_EP) < 1e-6, `终局装备 EP 不为 ${TERMINAL_GEAR_EP.toFixed(1)}`);
+assert(Math.abs(maxRed.atCapNoSet.enhancementEP - TERMINAL_COMPONENT_EP.enhancement) < 1e-6,
+  `神兵满打造增量不为 ${TERMINAL_COMPONENT_EP.enhancement.toFixed(1)} EP`);
+assert(Math.abs(result.setBudget.sixPieceEP - TERMINAL_COMPONENT_EP.setBonus) < 1e-6
+  && Math.abs(result.setBudget.fourPlusTwoEP - TERMINAL_COMPONENT_EP.setBonus * 10 / 12) < 1e-6
+  && Math.abs(result.setBudget.sixPiece - result.setBudget.sixPieceEP / TERMINAL_POWER_EP) < 1e-6
+  && Math.abs(result.setBudget.fourPlusTwo - result.setBudget.fourPlusTwoEP / TERMINAL_POWER_EP) < 1e-6, '套装预算不闭合');
 assert(Array.from({ length: 15 }, (_, level) => level).every(level =>
   Array.from({ length: 21 }, (_, streak) => streak).every(streak => {
     const p = probabilities(level, streak);
@@ -702,8 +720,8 @@ assert(Array.from({ length: 15 }, (_, level) => level).every(level =>
     return values.every(value => value >= 0 && value <= 1)
       && Math.abs(values.reduce((sum, value) => sum + value, 0) - 1) < 1e-12;
   })), '打造怜悯后的概率不闭合');
-assert(Math.abs(result.permanentCritProfile.equipmentAtExpectedAffixRoll - 0.125) < 1e-12
-  && Math.abs(result.permanentCritProfile.equipmentAtAlignedHighRoll - EQUIPMENT_CAPS.critChancePoints / 100) < 1e-12,
+assert(Math.abs(result.permanentCritProfile.equipmentAtExpectedAffixRoll - BLUE_AFFIX_EP * CRIT_CHANCE_POINTS_PER_EP / 100) < 1e-6
+  && Math.abs(result.permanentCritProfile.equipmentAtAlignedHighRoll - EQUIPMENT_CAPS.critChancePoints / 100) < 1e-6,
 '暴击词条期望值或极高滚值未闭合');
 assert(result.permanentCritProfile.totalAtAlignedHighRoll <= GLOBAL_CAPS.critChance, '常驻暴击超过全局上限');
 assert(result.economy.repair.every(row => row.targetGrossShare >= 0.07 && row.targetGrossShare <= 0.19), '修理目标越界');
