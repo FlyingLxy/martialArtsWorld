@@ -1,0 +1,803 @@
+{
+  "version": "0.1",
+  "seed": 20260905,
+  "runs": 100000,
+  "sourceHashes": {
+    "docs/数值基准.md": "db7bca3d32004c1d3a224a4735e0ef9a0734676e36dd8e99fdb69ddd8ee05546",
+    "docs/装备与打造.md": "1977d51361cc3047e4c4889e016a836e3bd4da350d70e1428e57e73f895aeb2a",
+    "docs/装备系统.md": "aa9868eb51aa0ec56c383a90309c0c3b7812110efc70a73d713472c962fc077e",
+    "docs/装备数值模拟报告.md": "9716101742df0c6ed2cfc94f87b75b317be0c48de20e9b85697cffdbf25b9746",
+    "docs/turn-based-combat.md": "9e9f2fc1d38125634e938364b5371df766e6b2dda376c47f710c683d4aa57a3c",
+    "scripts/equipment-balance/simulate-v0.1.js": "234f315476f7da60b3b9da76139047c6d287392ef9bff734c02bdb6ede7a779c"
+  },
+  "baseline": [
+    {
+      "level": 1,
+      "growth": 1,
+      "totalEP": 3.05,
+      "nonEquipmentEP": 1.98,
+      "equipmentEP": 1.07,
+      "equipmentShare": 0.35,
+      "hp": 51,
+      "mp": 3.05,
+      "attack": 3.41,
+      "defense": 1.28,
+      "selfTtk": 15.214,
+      "slots": {
+        "weapon": 0.32,
+        "body": 0.21,
+        "head": 0.14,
+        "wrist": 0.14,
+        "feet": 0.13,
+        "accessory": 0.13
+      }
+    },
+    {
+      "level": 10,
+      "growth": 1.9172,
+      "totalEP": 5.84,
+      "nonEquipmentEP": 3.78,
+      "equipmentEP": 2.06,
+      "equipmentShare": 0.353051,
+      "hp": 97,
+      "mp": 5.84,
+      "attack": 6.54,
+      "defense": 2.45,
+      "selfTtk": 15.214,
+      "slots": {
+        "weapon": 0.62,
+        "body": 0.41,
+        "head": 0.27,
+        "wrist": 0.27,
+        "feet": 0.25,
+        "accessory": 0.25
+      }
+    },
+    {
+      "level": 20,
+      "growth": 3.9515,
+      "totalEP": 12.04,
+      "nonEquipmentEP": 7.75,
+      "equipmentEP": 4.29,
+      "equipmentShare": 0.356441,
+      "hp": 195,
+      "mp": 12.04,
+      "attack": 13.48,
+      "defense": 5.06,
+      "selfTtk": 15.214,
+      "slots": {
+        "weapon": 1.29,
+        "body": 0.86,
+        "head": 0.56,
+        "wrist": 0.56,
+        "feet": 0.51,
+        "accessory": 0.51
+      }
+    },
+    {
+      "level": 30,
+      "growth": 7.0765,
+      "totalEP": 21.56,
+      "nonEquipmentEP": 13.8,
+      "equipmentEP": 7.76,
+      "equipmentShare": 0.359831,
+      "hp": 337,
+      "mp": 21.56,
+      "attack": 24.15,
+      "defense": 9.06,
+      "selfTtk": 15.214,
+      "slots": {
+        "weapon": 2.33,
+        "body": 1.55,
+        "head": 1.01,
+        "wrist": 1.01,
+        "feet": 0.93,
+        "accessory": 0.93
+      }
+    },
+    {
+      "level": 40,
+      "growth": 12.673,
+      "totalEP": 38.61,
+      "nonEquipmentEP": 24.59,
+      "equipmentEP": 14.02,
+      "equipmentShare": 0.36322,
+      "hp": 566,
+      "mp": 38.61,
+      "attack": 43.25,
+      "defense": 16.22,
+      "selfTtk": 15.214,
+      "slots": {
+        "weapon": 4.21,
+        "body": 2.8,
+        "head": 1.82,
+        "wrist": 1.82,
+        "feet": 1.68,
+        "accessory": 1.68
+      }
+    },
+    {
+      "level": 50,
+      "growth": 21.1344,
+      "totalEP": 64.39,
+      "nonEquipmentEP": 40.79,
+      "equipmentEP": 23.61,
+      "equipmentShare": 0.36661,
+      "hp": 864,
+      "mp": 64.39,
+      "attack": 72.12,
+      "defense": 27.04,
+      "selfTtk": 15.214,
+      "slots": {
+        "weapon": 7.08,
+        "body": 4.72,
+        "head": 3.07,
+        "wrist": 3.07,
+        "feet": 2.83,
+        "accessory": 2.83
+      }
+    },
+    {
+      "level": 60,
+      "growth": 32.821,
+      "totalEP": 100,
+      "nonEquipmentEP": 63,
+      "equipmentEP": 37,
+      "equipmentShare": 0.37,
+      "hp": 1200,
+      "mp": 100,
+      "attack": 112,
+      "defense": 42,
+      "selfTtk": 15.214,
+      "slots": {
+        "weapon": 11.1,
+        "body": 7.4,
+        "head": 4.81,
+        "wrist": 4.81,
+        "feet": 4.44,
+        "accessory": 4.44
+      }
+    }
+  ],
+  "calibration": {
+    "bluePlusZero": {
+      "totalEP": 100,
+      "nonEquipmentEP": 63,
+      "equipmentBaseEP": 32,
+      "affixEP": 5
+    },
+    "terminalTotalEP": 180,
+    "terminalBaseMultiplier": 2.297297297,
+    "canonicalRuns": 100000,
+    "cooldownRuns": 200000,
+    "enhancementSnapshotHash": "de8f78eb1a55e711d80c42808dd96c5865b28ceae514dce14b9d65b39d4f0f43",
+    "approvedEnhancementSnapshotHash": "de8f78eb1a55e711d80c42808dd96c5865b28ceae514dce14b9d65b39d4f0f43",
+    "canonicalSnapshotMatched": true,
+    "canonicalHeadlineMatched": true,
+    "publishedHeadlineRowsMatched": true,
+    "enhanceGainByBand": {
+      "plus1To3": 0.04,
+      "plus4To6": 0.06,
+      "plus7To9": 0.1,
+      "plus10To15": 0.116216216
+    }
+  },
+  "slots": [
+    {
+      "id": "weapon",
+      "name": "武器",
+      "share": 0.3
+    },
+    {
+      "id": "body",
+      "name": "身体",
+      "share": 0.2
+    },
+    {
+      "id": "head",
+      "name": "头部",
+      "share": 0.13
+    },
+    {
+      "id": "wrist",
+      "name": "腕部",
+      "share": 0.13
+    },
+    {
+      "id": "feet",
+      "name": "足部",
+      "share": 0.12
+    },
+    {
+      "id": "accessory",
+      "name": "佩饰",
+      "share": 0.12
+    }
+  ],
+  "ranks": [
+    {
+      "id": "white",
+      "name": "凡品",
+      "baseFactorVsBlue": 1,
+      "affixCount": 0,
+      "enhanceCap": 3,
+      "baseMultiplierAtCap": 1.12,
+      "atZeroNoSet": {
+        "baseEP": 32,
+        "affixEP": 0,
+        "equipmentEP": 32,
+        "totalPowerVsBluePlusZero": 0.95
+      },
+      "atCapNoSet": {
+        "baseEP": 32,
+        "enhancementEP": 3.84,
+        "affixEP": 0,
+        "equipmentEP": 35.84,
+        "totalEP": 98.84,
+        "totalPowerVsBluePlusZero": 0.9884,
+        "equipmentShare": 0.362606
+      },
+      "atCapFullSet": {
+        "baseEP": 32,
+        "enhancementEP": 3.84,
+        "affixEP": 0,
+        "setEP": 0,
+        "equipmentEP": 35.84,
+        "totalEP": 98.84,
+        "totalPowerVsBluePlusZero": 0.9884,
+        "equipmentShare": 0.362606
+      }
+    },
+    {
+      "id": "blue",
+      "name": "精品",
+      "baseFactorVsBlue": 1,
+      "affixCount": 1,
+      "enhanceCap": 6,
+      "baseMultiplierAtCap": 1.3,
+      "atZeroNoSet": {
+        "baseEP": 32,
+        "affixEP": 5,
+        "equipmentEP": 37,
+        "totalPowerVsBluePlusZero": 1
+      },
+      "atCapNoSet": {
+        "baseEP": 32,
+        "enhancementEP": 9.6,
+        "affixEP": 5,
+        "equipmentEP": 46.6,
+        "totalEP": 109.6,
+        "totalPowerVsBluePlusZero": 1.096,
+        "equipmentShare": 0.425182
+      },
+      "atCapFullSet": {
+        "baseEP": 32,
+        "enhancementEP": 9.6,
+        "affixEP": 5,
+        "setEP": 12,
+        "equipmentEP": 58.6,
+        "totalEP": 121.6,
+        "totalPowerVsBluePlusZero": 1.216,
+        "equipmentShare": 0.481908
+      }
+    },
+    {
+      "id": "purple",
+      "name": "珍品",
+      "baseFactorVsBlue": 1.052083,
+      "affixCount": 2,
+      "enhanceCap": 9,
+      "baseMultiplierAtCap": 1.6,
+      "atZeroNoSet": {
+        "baseEP": 33.666667,
+        "affixEP": 10,
+        "equipmentEP": 43.666667,
+        "totalPowerVsBluePlusZero": 1.066667
+      },
+      "atCapNoSet": {
+        "baseEP": 33.666667,
+        "enhancementEP": 20.2,
+        "affixEP": 10,
+        "equipmentEP": 63.866667,
+        "totalEP": 126.866667,
+        "totalPowerVsBluePlusZero": 1.268667,
+        "equipmentShare": 0.503416
+      },
+      "atCapFullSet": {
+        "baseEP": 33.666667,
+        "enhancementEP": 20.2,
+        "affixEP": 10,
+        "setEP": 12,
+        "equipmentEP": 75.866667,
+        "totalEP": 138.866667,
+        "totalPowerVsBluePlusZero": 1.388667,
+        "equipmentShare": 0.546327
+      }
+    },
+    {
+      "id": "orange",
+      "name": "绝品",
+      "baseFactorVsBlue": 1.104167,
+      "affixCount": 3,
+      "enhanceCap": 12,
+      "baseMultiplierAtCap": 1.948649,
+      "atZeroNoSet": {
+        "baseEP": 35.333333,
+        "affixEP": 15,
+        "equipmentEP": 50.333333,
+        "totalPowerVsBluePlusZero": 1.133333
+      },
+      "atCapNoSet": {
+        "baseEP": 35.333333,
+        "enhancementEP": 33.518919,
+        "affixEP": 15,
+        "equipmentEP": 83.852252,
+        "totalEP": 146.852252,
+        "totalPowerVsBluePlusZero": 1.468523,
+        "equipmentShare": 0.570997
+      },
+      "atCapFullSet": {
+        "baseEP": 35.333333,
+        "enhancementEP": 33.518919,
+        "affixEP": 15,
+        "setEP": 12,
+        "equipmentEP": 95.852252,
+        "totalEP": 158.852252,
+        "totalPowerVsBluePlusZero": 1.588523,
+        "equipmentShare": 0.603405
+      }
+    },
+    {
+      "id": "red",
+      "name": "神兵",
+      "baseFactorVsBlue": 1.15625,
+      "affixCount": 4,
+      "enhanceCap": 15,
+      "baseMultiplierAtCap": 2.297297,
+      "atZeroNoSet": {
+        "baseEP": 37,
+        "affixEP": 20,
+        "equipmentEP": 57,
+        "totalPowerVsBluePlusZero": 1.2
+      },
+      "atCapNoSet": {
+        "baseEP": 37,
+        "enhancementEP": 48,
+        "affixEP": 20,
+        "equipmentEP": 105,
+        "totalEP": 168,
+        "totalPowerVsBluePlusZero": 1.68,
+        "equipmentShare": 0.625
+      },
+      "atCapFullSet": {
+        "baseEP": 37,
+        "enhancementEP": 48,
+        "affixEP": 20,
+        "setEP": 12,
+        "equipmentEP": 117,
+        "totalEP": 180,
+        "totalPowerVsBluePlusZero": 1.8,
+        "equipmentShare": 0.65
+      }
+    }
+  ],
+  "terminalProfile": {
+    "affixRoll": 1,
+    "displayPercent": {
+      "level": 18,
+      "attributePoints": 5,
+      "talents": 12,
+      "equipmentBase": 20.6,
+      "enhancement": 26.7,
+      "affixes": 11.1,
+      "setBonus": 6.7
+    },
+    "exactEP": {
+      "level": 32.4,
+      "attributePoints": 9,
+      "talents": 21.6,
+      "equipmentBase": 37,
+      "enhancement": 48,
+      "affixes": 20,
+      "setBonus": 12
+    },
+    "displaySum": 100.1,
+    "totalEP": 180,
+    "totalPowerVsBluePlusZero": 1.8,
+    "equipmentEP": 117,
+    "equipmentShare": 0.65,
+    "theoreticalAffixRollRange": {
+      "theoreticalMinimum": {
+        "affixRoll": 0.8,
+        "affixEP": 16,
+        "equipmentEP": 113,
+        "totalEP": 176,
+        "equipmentShare": 0.642045
+      },
+      "expected": {
+        "affixRoll": 1,
+        "affixEP": 20,
+        "equipmentEP": 117,
+        "totalEP": 180,
+        "equipmentShare": 0.65
+      },
+      "theoreticalMaximum": {
+        "affixRoll": 1.2,
+        "affixEP": 24,
+        "equipmentEP": 121,
+        "totalEP": 184,
+        "equipmentShare": 0.657609
+      }
+    },
+    "illustrativeEqualTtkStatsAt60": {
+      "hp": 1978,
+      "attack": 220.1,
+      "defense": 69.2,
+      "selfTtk": 15.206
+    }
+  },
+  "largestSingleQualityStep": {
+    "from": "blue",
+    "to": "purple",
+    "slot": "weapon",
+    "enhanceLevel": 0,
+    "affixRoll": 1,
+    "deltaEP": 2,
+    "fromTotalEP": 100,
+    "relativePowerGain": 0.02
+  },
+  "largestAlignedHighRollQualityStep": {
+    "from": "blue",
+    "to": "purple",
+    "slot": "weapon",
+    "enhanceLevel": 0,
+    "affixRoll": 1.2,
+    "deltaEP": 2.3,
+    "fromTotalEP": 101,
+    "relativePowerGain": 0.022772
+  },
+  "setBudget": {
+    "twoPiece": 0.016666666666666666,
+    "fourPiece": 0.03888888888888889,
+    "sixPiece": 0.06666666666666667,
+    "fourPlusTwo": 0.05555555555555555,
+    "twoPieceEP": 3,
+    "fourPieceEP": 7,
+    "sixPieceEP": 12,
+    "fourPlusTwoEP": 10,
+    "sixVsFourPlusTwoBudgetGap": 0.011111,
+    "budgetGapAtTerminal": 0.011111
+  },
+  "caps": {
+    "equipment": {
+      "critChancePoints": 15,
+      "critDamage": 0.3,
+      "dodgePoints": 12,
+      "cooldownExtraAdvance": 0.15
+    },
+    "global": {
+      "critChance": 0.4,
+      "critMultiplier": 2,
+      "dodgeBonus": 0.25
+    }
+  },
+  "permanentCritProfile": {
+    "base": 0.08,
+    "agility": 0.03,
+    "talents": 0.04,
+    "critChancePointsPerEP": 2.5,
+    "sixSlotCritAffixEPAtExpectedRoll": 5,
+    "sixSlotCritAffixEPAtAlignedHighRoll": 6,
+    "equipmentAtExpectedAffixRoll": 0.125,
+    "equipmentAtAlignedHighRoll": 0.15,
+    "totalAtExpectedAffixRoll": 0.275,
+    "totalAtAlignedHighRoll": 0.3,
+    "critMultiplierWithEquipment": 1.75,
+    "expectedDamageVsBaselineAtExpectedAffixRoll": 0.1643,
+    "expectedDamageVsBaselineAtAlignedHighRoll": 0.1824
+  },
+  "cooldown": [
+    {
+      "base": 1,
+      "noReduction": 1,
+      "atCap": 1
+    },
+    {
+      "base": 2,
+      "noReduction": 2,
+      "atCap": 1.849
+    },
+    {
+      "base": 3,
+      "noReduction": 3,
+      "atCap": 2.721
+    },
+    {
+      "base": 4,
+      "noReduction": 4,
+      "atCap": 3.593
+    }
+  ],
+  "enhancement": [
+    {
+      "cap": 3,
+      "setAttempts": {
+        "p50": 19,
+        "p90": 21,
+        "p99": 24
+      },
+      "setSilverHours": {
+        "p50": 1.86,
+        "p90": 2.14,
+        "p99": 2.43
+      },
+      "setMaterials": {
+        "M1": {
+          "p50": 25,
+          "p90": 28,
+          "p99": 32
+        },
+        "M2": {
+          "p50": 0,
+          "p90": 0,
+          "p99": 0
+        },
+        "M3": {
+          "p50": 0,
+          "p90": 0,
+          "p99": 0
+        },
+        "M4": {
+          "p50": 0,
+          "p90": 0,
+          "p99": 0
+        }
+      },
+      "perItemMean": {
+        "attempts": 3.144,
+        "silverR": 0.156,
+        "downgradeEvents": 0,
+        "levelsLost": 0
+      }
+    },
+    {
+      "cap": 6,
+      "setAttempts": {
+        "p50": 42,
+        "p90": 48,
+        "p99": 52
+      },
+      "setSilverHours": {
+        "p50": 6.14,
+        "p90": 7.17,
+        "p99": 8.12
+      },
+      "setMaterials": {
+        "M1": {
+          "p50": 25,
+          "p90": 28,
+          "p99": 32
+        },
+        "M2": {
+          "p50": 31,
+          "p90": 38,
+          "p99": 44
+        },
+        "M3": {
+          "p50": 0,
+          "p90": 0,
+          "p99": 0
+        },
+        "M4": {
+          "p50": 0,
+          "p90": 0,
+          "p99": 0
+        }
+      },
+      "perItemMean": {
+        "attempts": 7.078,
+        "silverR": 0.517,
+        "downgradeEvents": 0,
+        "levelsLost": 0
+      }
+    },
+    {
+      "cap": 9,
+      "setAttempts": {
+        "p50": 83,
+        "p90": 103,
+        "p99": 123
+      },
+      "setSilverHours": {
+        "p50": 18.31,
+        "p90": 24.08,
+        "p99": 30.71
+      },
+      "setMaterials": {
+        "M1": {
+          "p50": 25,
+          "p90": 28,
+          "p99": 32
+        },
+        "M2": {
+          "p50": 87,
+          "p90": 114,
+          "p99": 142
+        },
+        "M3": {
+          "p50": 34,
+          "p90": 48,
+          "p99": 63
+        },
+        "M4": {
+          "p50": 0,
+          "p90": 0,
+          "p99": 0
+        }
+      },
+      "perItemMean": {
+        "attempts": 14.163,
+        "silverR": 1.573,
+        "downgradeEvents": 2.063,
+        "levelsLost": 2.063
+      }
+    },
+    {
+      "cap": 12,
+      "setAttempts": {
+        "p50": 150,
+        "p90": 193,
+        "p99": 238
+      },
+      "setSilverHours": {
+        "p50": 45.14,
+        "p90": 61.84,
+        "p99": 81.22
+      },
+      "setMaterials": {
+        "M1": {
+          "p50": 25,
+          "p90": 28,
+          "p99": 32
+        },
+        "M2": {
+          "p50": 124,
+          "p90": 169,
+          "p99": 217
+        },
+        "M3": {
+          "p50": 99,
+          "p90": 138,
+          "p99": 180
+        },
+        "M4": {
+          "p50": 42,
+          "p90": 61,
+          "p99": 82
+        }
+      },
+      "perItemMean": {
+        "attempts": 25.515,
+        "silverR": 3.898,
+        "downgradeEvents": 6.357,
+        "levelsLost": 6.575
+      }
+    },
+    {
+      "cap": 15,
+      "setAttempts": {
+        "p50": 230,
+        "p90": 299,
+        "p99": 373
+      },
+      "setSilverHours": {
+        "p50": 106.43,
+        "p90": 145.28,
+        "p99": 189.32
+      },
+      "setMaterials": {
+        "M1": {
+          "p50": 25,
+          "p90": 28,
+          "p99": 32
+        },
+        "M2": {
+          "p50": 136,
+          "p90": 188,
+          "p99": 243
+        },
+        "M3": {
+          "p50": 222,
+          "p90": 301,
+          "p99": 385
+        },
+        "M4": {
+          "p50": 114,
+          "p90": 162,
+          "p99": 212
+        }
+      },
+      "perItemMean": {
+        "attempts": 39.248,
+        "silverR": 9.173,
+        "downgradeEvents": 11.808,
+        "levelsLost": 12.398
+      }
+    }
+  ],
+  "acquisition": {
+    "ordinaryFinishedItem": {
+      "baseChance": 0.12,
+      "publicGuaranteeAt": 12,
+      "expectedEligibleSettlements": 6.536,
+      "weeklyQuota": 12,
+      "bankCap": 24
+    },
+    "targetedPurple": {
+      "baseChance": 0.15,
+      "publicGuaranteeAt": 8,
+      "expectedEligibleSettlements": 4.85
+    },
+    "targetedOrange": {
+      "baseChance": 0.1,
+      "publicGuaranteeAt": 12,
+      "expectedEligibleSettlements": 7.176
+    },
+    "redPath": {
+      "weeklyFragmentGuarantee": 1,
+      "requiredFragments": 24
+    }
+  },
+  "economy": {
+    "referenceValue": "R(level, slot) = 12 × H(level) × slotShare(slot)",
+    "repairAssumptions": {
+      "rewardedCombatsPerHour": 60,
+      "referenceCombats": 100,
+      "durabilityLossPerCombat": 1,
+      "fullSetReferenceValueHours": 12
+    },
+    "repair": [
+      {
+        "rank": "white",
+        "coefficient": 0.011,
+        "targetGrossShare": 0.0792
+      },
+      {
+        "rank": "blue",
+        "coefficient": 0.014,
+        "targetGrossShare": 0.1008
+      },
+      {
+        "rank": "purple",
+        "coefficient": 0.017,
+        "targetGrossShare": 0.1224
+      },
+      {
+        "rank": "orange",
+        "coefficient": 0.021,
+        "targetGrossShare": 0.1512
+      },
+      {
+        "rank": "red",
+        "coefficient": 0.025,
+        "targetGrossShare": 0.18
+      }
+    ],
+    "decompositionBaseReturn": {
+      "white": 0.2,
+      "blue": 0.25,
+      "purple": 0.3,
+      "orange": 0.35,
+      "red": 0.4
+    },
+    "decompositionEnhanceReturn": {
+      "M1": 0.2,
+      "M2": 0.15,
+      "M3": 0.1,
+      "M4": 0.05
+    },
+    "craftDecomposeTradeableHardLimit": 0.6,
+    "craftDecomposeDesignTarget": 0.4,
+    "marketP95HardLimit": 0.8
+  }
+}

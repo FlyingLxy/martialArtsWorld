@@ -7,6 +7,7 @@
     "start": "node server.js",
     "check": "node gamedata/check.js && node server/check.js",
     "balance:v0.5": "node scripts/talent-balance/simulate-v0.5.js",
+    "balance:equipment:v0.1": "node scripts/equipment-balance/simulate-v0.1.js",
     "test": "npm run check && node test.js",
     "test:mysql": "npm run check && node test.js mysql"
   },
