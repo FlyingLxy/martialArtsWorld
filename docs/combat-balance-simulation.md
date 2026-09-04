@@ -2,9 +2,9 @@
 
 > 状态：v0.5 可复现平衡复验
 >
-> 依赖：[门派天赋体系](talent-system.md) v0.5 与[门派主动技能体系](active-skills.md) v0.5。可版本化模拟器、运行说明和结果快照保留在 [`scripts/talent-balance`](../scripts/talent-balance/README.md)。
+> 依赖：[门派天赋体系](talent-system.md) v0.5、[门派主动技能体系](active-skills.md) v0.5 与[技能进度与等级扩展合同](技能进度与等级扩展合同.md)。可版本化模拟器、运行说明和结果快照保留在 [`scripts/talent-balance`](../scripts/talent-balance/README.md)。
 >
-> 适用范围：所有战斗场景沿用同一套技能、天赋、事件和数值，不设置模式专属倍率。
+> 适用范围：所有战斗场景沿用同一套技能、天赋、事件和数值，不设置模式专属倍率。本文 v0.5 结果只覆盖 60 级、基础修习 10 级标准装；升级期与装备 11～12 级尚待分档复验。
 
 ## 1. 本轮结论
 
